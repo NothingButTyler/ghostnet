@@ -1,0 +1,2 @@
+# ghostnet
+GhostNet bot code.
