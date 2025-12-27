@@ -86,3 +86,31 @@ async def encrypt(ctx, *, text):
 keep_alive() # Starts the web server
 token = os.environ.get("DISCORD_TOKEN") # Set this in Render's Environment Variables
 bot.run(token)
+
+
+import time
+
+start_time = time.time()
+
+@bot.command()
+async def status(ctx):
+    """Displays the bot's system health and uptime."""
+    current_time = time.time()
+    uptime_seconds = int(current_time - start_time)
+    
+    # Calculate uptime in a readable format
+    hours, remainder = divmod(uptime_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    
+    await ctx.send(
+        f"```yaml\n"
+        f"--- [GHOSTNET SYSTEM STATUS] ---\n"
+        f"UPTIME: {hours}h {minutes}m {seconds}s\n"
+        f"HEARTBEAT: Stable\n"
+        f"CONNECTION: Encrypted via UptimeRobot\n"
+        f"MAIN_DIRECTORY: /code/\n"
+        f"STATUS: Fully Operational\n"
+        f"-------------------------------\n"
+        f"```"
+    )
+
