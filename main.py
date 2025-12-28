@@ -48,6 +48,21 @@ async def status(ctx):
     uptime = int(time.time() - start_time)
     await ctx.send(f"```yaml\nUPTIME: {uptime}s\nSTATUS: OPERATIONAL\n```")
 
+@bot.command()
+async def encrypt(ctx, *, message=None):
+    if message is None:
+        await ctx.send("```yaml\nERROR: No input detected for encryption.\nUSAGE: !encrypt <text>\n```")
+        return
+
+    # Converts text to a hex data stream
+    hex_output = " ".join(hex(ord(c))[2:].upper() for c in message)
+    
+    await ctx.send(
+        f"🛰️ **ENCRYPTING VIA GHOSTNET PROXY...**\n"
+        f"```fix\n0x{hex_output}```"
+    )
+
+
 # 4. STARTUP
 if __name__ == "__main__":
     keep_alive()
