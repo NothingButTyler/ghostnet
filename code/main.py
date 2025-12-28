@@ -1,39 +1,58 @@
 import discord
 from discord.ext import commands
-import random
 import os
-import time
+import random
 from flask import Flask
 from threading import Thread
 
-# --- 1. WEB SERVER (THE HEARTBEAT) ---
-app = Flask('')
+print(">>> SYSTEM: Booting GhostNet...")
 
+# --- WEB SERVER ---
+app = Flask('')
 @app.route('/')
 def home():
-    return "STATUS: SYSTEM OPERATIONAL // GHOSTNET ONLINE"
+    return "GHOSTNET: ONLINE"
 
 def run():
-    # Render provides a 'PORT' environment variable automatically
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
+    try:
+        port = int(os.environ.get("PORT", 8080))
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f">>> ERROR: Flask failed: {e}")
 
 def keep_alive():
     t = Thread(target=run)
-    t.daemon = True # This ensures the thread dies when the main script stops
+    t.daemon = True
     t.start()
+    print(">>> SYSTEM: Web server thread started.")
 
-# --- 2. BOT INITIALIZATION ---
+# --- BOT LOGIC ---
 intents = discord.Intents.default()
-intents.members = True  
+intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-start_time = time.time()
-AUTO_ROLE_NAME = "Initiate" 
 
 @bot.event
 async def on_ready():
+    print(f'>>> SUCCESS: {bot.user} is connected to Discord.')
+
+@bot.command()
+async def ping(ctx):
+    await ctx.send("```fix\nPONG: Connection Stable.```")
+
+# --- STARTUP ---
+if __name__ == "__main__":
+    try:
+        keep_alive()
+        token = os.environ.get("DISCORD_TOKEN")
+        if not token:
+            print(">>> CRITICAL: DISCORD_TOKEN is missing in Render Environment!")
+        else:
+            print(">>> SYSTEM: Attempting Discord login...")
+            bot.run(token)
+    except Exception as e:
+        print(f">>> CRITICAL FAILURE: {e}")
     print(f'>>> LOG: {bot.user} logged into mainframe.')
 
 # --- 3. HACKER COMMANDS ---
