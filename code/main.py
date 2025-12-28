@@ -2,64 +2,63 @@ import discord
 from discord.ext import commands
 import random
 import os
+import time
 from flask import Flask
 from threading import Thread
 
-# --- KEEP ALIVE SECTION FOR RENDER ---
+# --- 1. WEB SERVER (THE HEARTBEAT) ---
 app = Flask('')
+
 @app.route('/')
 def home():
-    return "System Online: Hacker Bot is Running."
+    return "STATUS: SYSTEM OPERATIONAL // GHOSTNET ONLINE"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    # Render provides a 'PORT' environment variable automatically
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
+    t.daemon = True # This ensures the thread dies when the main script stops
     t.start()
 
-# --- BOT LOGIC ---
+# --- 2. BOT INITIALIZATION ---
 intents = discord.Intents.default()
-intents.members = True  # Required for welcome/goodbye and auto-role
+intents.members = True  
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-# 3. Auto-role configuration
-AUTO_ROLE_NAME = "Initiate" # Change this to the role name you want
+start_time = time.time()
+AUTO_ROLE_NAME = "Initiate" 
 
 @bot.event
 async def on_ready():
-    print(f'--- CONNECTION ESTABLISHED: {bot.user} ---')
-    print('Injecting scripts into mainframe...')
+    print(f'>>> LOG: {bot.user} logged into mainframe.')
 
-# 1. Welcome Users
-@bot.event
-async def on_member_join(member):
-    channel = member.guild.system_channel
-    if channel:
-        responses = [
-            f"ID detected: {member.mention}. Bypassing firewall... Access granted. Welcome to the grid.",
-            f"New node connected: {member.mention}. Initializing encrypted handshake...",
-        ]
-        await channel.send(f"```json\n[SYSTEM]: {random.choice(responses)}\n```")
-    
-    # Auto-role logic
-    role = discord.utils.get(member.guild.roles, name=AUTO_ROLE_NAME)
-    if role:
-        await member.add_roles(role)
-
-# 2. Goodbye Users
-@bot.event
-async def on_member_remove(member):
-    channel = member.guild.system_channel
-    if channel:
-        await channel.send(f"```diff\n- [WARNING]: Connection lost with {member.name}. Signal trace failed. Terminating session...\n```")
-
-# 4. Fake Hacker Messages
+# --- 3. HACKER COMMANDS ---
 @bot.command()
 async def hack(ctx, target: discord.Member = None):
     if not target:
+        await ctx.send("Specify a target to breach.")
+        return
+    msg = await ctx.send(f"```fix\n[INITIATING BREACH]: {target.name}...```")
+    await discord.utils.sleep_until(discord.utils.utcnow() + discord.timedelta(seconds=2))
+    await msg.edit(content=f"```fix\n[SUCCESS]: {target.name} has been pwned. IP: {random.randint(100,999)}.0.0.1```")
+
+@bot.command()
+async def status(ctx):
+    uptime = int(time.time() - start_time)
+    await ctx.send(f"```yaml\nUPTIME: {uptime}s\nCONNECTION: STABLE\nWEB_SERVER: ACTIVE\n```")
+
+# --- 4. EXECUTION ---
+if __name__ == "__main__":
+    keep_alive() # Start the Flask server first
+    token = os.environ.get("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
+    else:
+        print("CRITICAL ERROR: NO DISCORD_TOKEN FOUND")
         await ctx.send("Specify a target to breach.")
         return
 
