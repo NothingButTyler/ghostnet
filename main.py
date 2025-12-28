@@ -63,6 +63,26 @@ async def encrypt(ctx, *, message=None):
     )
 
 
+# --- 3.5 SLASH COMMANDS ---
+@bot.tree.command(name="help", description="Get instructions on how to use GhostNet")
+async def help_slash(interaction: discord.Interaction):
+    # 'ephemeral=True' makes it so only the user sees the message!
+    await interaction.response.send_message(
+        "Hey! Welcome to **GhostNet**! 🛰️\n"
+        "To get started, please use the prefix `!` for commands.\n"
+        "Try typing `!status` or `!hack @user` to begin.", 
+        ephemeral=True
+    )
+
+# SYNC COMMAND (Run this once in Discord to make the /help show up)
+@bot.command()
+@commands.is_owner() # Only you can run this
+async def sync(ctx):
+    await bot.tree.sync()
+    await ctx.send("```diff\n+ [SYSTEM]: Slash commands synced to mainframe.```")
+
+
+
 # 4. STARTUP
 if __name__ == "__main__":
     keep_alive()
