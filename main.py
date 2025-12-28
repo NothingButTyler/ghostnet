@@ -2,38 +2,60 @@ import discord
 from discord.ext import commands
 import os
 import random
+import time
 from flask import Flask
 from threading import Thread
 
-print(">>> SYSTEM: Booting GhostNet...")
-
-# --- WEB SERVER ---
+# --- 1. WEB SERVER ---
 app = Flask('')
 @app.route('/')
 def home():
     return "GHOSTNET: ONLINE"
 
 def run():
-    try:
-        port = int(os.environ.get("PORT", 8080))
-        app.run(host='0.0.0.0', port=port)
-    except Exception as e:
-        print(f">>> ERROR: Flask failed: {e}")
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
     t.daemon = True
     t.start()
-    print(">>> SYSTEM: Web server thread started.")
 
-# --- BOT LOGIC ---
+# --- 2. BOT SETUP ---
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+start_time = time.time()
 
 @bot.event
+async def on_ready():
+    print(f'>>> SUCCESS: {bot.user} is online.')
+
+# --- 3. COMMANDS ---
+@bot.command()
+async def ping(ctx):
+    await ctx.send("```fix\nPONG: Mainframe stable.```")
+
+@bot.command()
+async def hack(ctx, target: discord.Member = None):
+    if not target:
+        await ctx.send("Target required.")
+        return
+    msg = await ctx.send(f"```fix\n[BREACHING]: {target.name}...```")
+    # This 'await' is INSIDE a function, so it is safe!
+    await ctx.send(f"```diff\n+ [DONE]: {target.name} pwned.```")
+
+# --- 4. THE STARTUP (THE FIX) ---
+if __name__ == "__main__":
+    keep_alive()
+    token = os.environ.get("DISCORD_TOKEN")
+    if token:
+        # bot.run handles the loop, so no 'await' is needed here!
+        bot.run(token)
+    else:
+        print("TOKEN NOT FOUND")
 async def on_ready():
     print(f'>>> SUCCESS: {bot.user} is connected to Discord.')
 
