@@ -26,9 +26,13 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.remove_command('help') # Removing default help for our custom one
 
-welcome_settings = {"message": "Welcome {User_Mention}!", "channel_id": None}
-goodbye_settings = {"message": "{User} has disconnected.", "channel_id": None}
+# Update your settings dictionary
+welcome_settings = {
+    "message": "Welcome {User_Mention}!",
+    "channel_id": None,
+    "auto_roles": []  # This will store the IDs of the roles to give out
 ISAAC_ID = 1444073106384621631
+}
 
 # --- 3. HELPER FUNCTIONS ---
 def get_ordinal(n):
