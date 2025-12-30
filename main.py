@@ -6,6 +6,8 @@ import asyncio
 from flask import Flask
 from threading import Thread
 
+bot.remove_command('help')
+
 # --- 1. WEB SERVER ---
 app = Flask('')
 @app.route('/')
@@ -165,6 +167,40 @@ async def on_member_join(member):
 async def sync(ctx):
     await bot.tree.sync()
     await ctx.send("```diff\n+ [SYSTEM]: Slash commands synced.```")
+
+# The new !help command
+
+@bot.command(name="help")
+async def custom_help(ctx):
+    # Create the fancy embed box
+    embed = discord.Embed(
+        title="🛰️ GHOSTNET OPERATING SYSTEM: DIRECTORY",
+        description="Welcome to the mainframe. Use the commands below to navigate.",
+        color=0x2b2d31 # A sleek dark gray/blue color
+    )
+
+    # Grouping the commands in the style you liked
+    embed.add_field(
+        name="🛠️ UTILITY", 
+        value="`!help` - sends this message\n"
+              "`!sync` - syncs slash commands to mainframe", 
+        inline=False
+    )
+
+    embed.add_field(
+        name="🛰️ WELCOME MODULE", 
+        value="`!welcome-setup` - create a welcome message\n"
+              "`!welcome-edit` - edit the welcome message\n"
+              "`!welcome-test` - test the welcome message", 
+        inline=False
+    )
+
+    # Adding your Sambucha quote at the bottom
+    embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
+    
+    await ctx.send(embed=embed)
+
+
 
 # --- 6. STARTUP ---
 if __name__ == "__main__":
