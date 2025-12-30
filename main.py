@@ -112,11 +112,43 @@ async def welcome_test(ctx):
         await ctx.send("Message sent successfully! ✅", delete_after=5)
 
 @bot.command(name="welcome-edit")
-async def welcome_edit(ctx):
-    if welcome_settings["channel_id"] is None:
-        await ctx.send("❌ **ERROR:** Use `!welcome-setup` first.")
-        return
-    await ctx.send("⚙️ **GHOSTNET EDIT MODE**", view=WelcomeSetupView())
+    async def delete_callback(interaction: discord.Interaction):
+        # Create a new sub-view for the confirmation buttons
+        confirm_view = ui.View()
+        
+        # --- THE YES BUTTON ---
+        yes_btn = ui.Button(label="Confirm Wipe", style=discord.ButtonStyle.danger)
+        async def yes_callback(itn: discord.Interaction):
+            welcome_settings["message"] = "Welcome {User_Mention} to {Server_Name}!"
+            welcome_settings["channel_id"] = None
+            await itn.response.edit_message(
+                content="🧨 **SYSTEM PURGE COMPLETE.** Files erased.", 
+                view=None
+            )
+            await asyncio.sleep(5)
+            await itn.delete_original_response()
+        
+        # --- THE NO BUTTON ---
+        no_btn = ui.Button(label="Cancel", style=discord.ButtonStyle.secondary)
+        async def no_callback(itn: discord.Interaction):
+            await itn.response.edit_message(
+                content="🛰️ **PURGE ABORTED.** System stable.", 
+                view=None
+            )
+        
+        yes_btn.callback = yes_callback
+        no_btn.callback = no_callback
+        confirm_view.add_item(yes_btn)
+        confirm_view.add_item(no_btn)
+
+        # Edit the message to show the safety prompt
+        await interaction.response.edit_message(
+            content="⚠️ **WARNING: DATA PURGE DETECTED** ⚠️\n"
+                    "Are you sure you want to erase all welcome configurations?",
+            view=confirm_view
+        )
+
+
 
 @bot.event
 async def on_member_join(member):
