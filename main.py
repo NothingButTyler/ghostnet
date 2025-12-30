@@ -82,6 +82,32 @@ def get_ordinal(n):
         suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
     return f"{n}**{suffix.upper()}**"
 
+@bot.command(name="welcome-edit")
+async def welcome_edit(ctx):
+    # Check if they have even started the setup
+    if welcome_settings["channel_id"] is None:
+        await ctx.send(
+            "❌ **ERROR: NO CONFIGURATION FOUND**\n"
+            "I can't edit a system that hasn't been initialized.\n"
+            "Please use `!welcome-setup` first to start the mainframe."
+        )
+        return
+
+    # If it exists, show the edit view (we can reuse our SetupView!)
+    view = WelcomeSetupView()
+    
+    # Let's add a "Save" button specifically for the edit command
+    save_btn = ui.Button(label="💾 Save & Exit", style=discord.ButtonStyle.success)
+    
+    async def save_callback(interaction: discord.Interaction):
+        await interaction.response.send_message("🛰️ **Mainframe Updated.** All changes have been hard-coded.", ephemeral=True)
+        # This stops the buttons from working after saving
+        view.stop() 
+
+    save_btn.callback = save_callback
+    view.add_item(save_btn)
+
+    await ctx.send("⚙️ **GHOSTNET EDIT MODE**\nModify your welcome parameters below:", view=view)
 
 
 @bot.event
