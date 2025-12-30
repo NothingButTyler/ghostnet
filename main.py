@@ -73,14 +73,40 @@ class WelcomeSetupView(ui.View):
 async def welcome_setup(ctx):
     await ctx.send("🛠️ **GhostNet Configuration Mainframe**", view=WelcomeSetupView())
 
+def get_ordinal(n):
+    # This handles the special cases like 11th, 12th, 13th
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    else:
+        # This handles 1st, 2nd, 3rd, and everything else (th)
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return f"{n}**{suffix.upper()}**"
+
+
+
 @bot.event
 async def on_member_join(member):
     channel_id = welcome_settings.get("channel_id")
     if channel_id:
         channel = bot.get_channel(channel_id)
         if channel:
-            msg = welcome_settings["message"].replace("{User_Mention}", member.mention).replace("{Server_Name}", member.guild.name)
-            await channel.send(f"🛰️ **NEW INITIATE**\n{msg}")
+            raw_msg = welcome_settings["message"]
+            count = member.guild.member_count # Gets the total number of members
+            
+            # 🛰️ PROCESSING TAGS
+            final_msg = raw_msg.replace("{User_Mention}", member.mention)
+            final_msg = final_msg.replace("{User}", member.name)
+            final_msg = final_msg.replace("{Server_Name}", member.guild.name)
+            
+            # --- NEW TAGS ---
+            final_msg = final_msg.replace("{Server_Members}", str(count))
+            final_msg = final_msg.replace("{Member_Count_Ordinal}", get_ordinal(count))
+            # My choice: A "Account Age" tag to see how new the user's account is!
+            account_age = (discord.utils.utcnow() - member.created_at).days
+            final_msg = final_msg.replace("{Account_Age}", f"{account_age} days")
+
+            await channel.send(f"🛰️ **NEW INITIATE**\n{final_msg}")
+
 
 @bot.command()
 @commands.is_owner()
