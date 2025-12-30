@@ -116,6 +116,46 @@ async def on_member_remove(member):
     else:
         await channel.send(f"🔻 **CONNECTION LOST**\n{member.name} has disconnected.")
 
+
+    # Hack command
+import random
+
+@bot.command(name="hack")
+async def hack(ctx, member: discord.Member = None):
+    if member is None:
+        await ctx.send("❌ **ERROR:** Please specify a target. Usage: `!hack @user`")
+        return
+
+    # Isaac special case - making it extra scary
+    if member.id == ISAAC_ID:
+        msg = await ctx.send(f"🕵️‍♂️ **TARGET: {member.name}**\n`Initializing Deep Trace...`")
+        await asyncio.sleep(2)
+        await msg.edit(content="`[██░░░░░░░░] 20% - Bypassing Firewall...`")
+        await asyncio.sleep(2)
+        await msg.edit(content="`[██████░░░░] 60% - Extracting Metadata...`")
+        await asyncio.sleep(2)
+        await msg.edit(content=f"⚠️ **BREACH SUCCESSFUL**\n```diff\n- [SYSTEM]: Private logs found for {member.name}\n- [SYSTEM]: Tracking active via terminal 144.4.0.7\n- [WARNING]: TARGET IS VULNERABLE.```")
+        return
+
+    # Normal "Prank" hack for other members
+    msg = await ctx.send(f"💻 `Hacking {member.name}...`")
+    await asyncio.sleep(1.5)
+    
+    actions = [
+        f"📧 Finding email address...",
+        f"🔓 Decrypting password...",
+        f"📍 Locating IP address...",
+        f"🖼️ Accessing webcam...",
+        f"📊 Selling data to dark web..."
+    ]
+    
+    for action in actions:
+        await asyncio.sleep(1.5)
+        await msg.edit(content=f"💻 `{action}`")
+    
+    await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} has been pwned.")
+
+
 # --- 7. STARTUP ---
 if __name__ == "__main__":
     keep_alive()
