@@ -43,6 +43,33 @@ class WelcomeSetupView(ui.View):
             await asyncio.sleep(5)
             await interaction.delete_original_response()
 
+            @bot.command(name="welcome-test")
+async def welcome_test(ctx):
+    # 1. Check if a channel is set up first
+    channel_id = welcome_settings.get("channel_id")
+    if not channel_id:
+        await ctx.send("❌ **ERROR:** No welcome channel configured. Use `!welcome-setup` first.", delete_after=10)
+        return
+
+    channel = bot.get_channel(channel_id)
+    if channel:
+        # 2. Get the message logic
+        raw_msg = welcome_settings.get("message")
+        count = ctx.guild.member_count
+        
+        # 3. Process tags
+        final_msg = raw_msg.replace("{User_Mention}", ctx.author.mention)
+        final_msg = final_msg.replace("{User}", ctx.author.name)
+        final_msg = final_msg.replace("{Server_Name}", ctx.guild.name)
+        final_msg = final_msg.replace("{Server_Members}", str(count))
+        final_msg = final_msg.replace("{Member_Count_Ordinal}", get_ordinal(count))
+        
+        # 4. Send the public test message with the header
+        await channel.send(f"⚠️ **SYSTEM TEST - GHOSTNET SIMULATION** ⚠️\n{final_msg}")
+        
+        # 5. Send the private confirmation (not a DM, but ephemeral-style)
+        await ctx.send("Message sent successfully! ✅", delete_after=5)
+
 # --- THE TEST COMMAND ---
 @bot.command(name="welcome-test")
 async def welcome_test(ctx):
