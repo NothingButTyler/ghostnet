@@ -4,6 +4,51 @@ from discord import ui
 import os
 from flask import Flask
 from threading import Thread
+import asyncio # Add this to your imports at the top!
+
+class WelcomeSetupView(ui.View):
+    def __init__(self):
+        super().__init__(timeout=180) # Timeout after 3 mins of inactivity
+        self.step = 1
+
+    async def update_message(self, interaction: discord.Interaction, content: str):
+        # This is the "transition" magic—it edits the existing message
+        await interaction.response.edit_message(content=content, view=self)
+
+    @ui.button(label="Next Step ➡️", style=discord.ButtonStyle.primary)
+    async def next_step(self, interaction: discord.Interaction, button: ui.Button):
+        self.step += 1
+        
+        if self.step == 2:
+            await self.update_message(interaction, "🛰️ **STEP 2: THE MESSAGE**\nClick 'Set Message' to type your greeting.\nTags: `{User_Mention}`, `{Member_Count_Ordinal}`, etc.")
+            # Add the Modal button dynamically
+            self.add_item(ui.Button(label="Set Message", style=discord.ButtonStyle.secondary, custom_id="msg_btn"))
+            
+        elif self.step == 3:
+            await self.update_message(interaction, "🛰️ **STEP 3: THE CHANNEL**\nWhere should I broadcast the entry logs?")
+            # Here you would trigger the channel select logic
+            
+        elif self.step == 4:
+            # The Final Step: Save & Auto-Delete
+            button.label = "💾 SAVE & FINALIZE"
+            button.style = discord.ButtonStyle.success
+            await self.update_message(interaction, "🛰️ **FINAL STEP: CONFIRMATION**\nReady to hard-code these settings into the mainframe?")
+            self.step = 5 # Move to the finish state
+
+        elif self.step == 6: # Triggered after clicking the Save button
+            await interaction.response.edit_message(
+                content="✅ **SUCCESS!**\nSettings saved. Use `!welcome-edit` to modify or `!welcome-test` to test.\n\n*Closing terminal in 5 seconds...*",
+                view=None
+            )
+            await asyncio.sleep(5)
+            await interaction.delete_original_response()
+
+# --- THE TEST COMMAND ---
+@bot.command(name="welcome-test")
+async def welcome_test(ctx):
+    # This simulates a join for the user who typed it
+    await on_member_join(ctx.author)
+
 
 # --- 1. WEB SERVER ---
 app = Flask('')
