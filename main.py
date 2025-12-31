@@ -21,6 +21,16 @@ def keep_alive():
     t.start()
 
 # --- 2. BOT SETUP & MEMORY ---
+@bot.event
+async def on_ready():
+    print(f'✅ GHOSTNET LOGGED IN AS: {bot.user.name}')
+    print(f'📡 ID: {bot.user.id}')
+    print('------')
+    # This helps us see if the bot actually loaded the commands
+    for command in bot.commands:
+        print(f'Loaded Command: !{command.name}')
+
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -156,6 +166,10 @@ async def on_member_remove(member):
             await chan.send(f"🔻 **CONNECTION LOST**\n{member.name} has disconnected.")
 
 # --- 7. STARTUP ---
+# v2
 if __name__ == "__main__":
     keep_alive()
-    bot.run(os.environ.get("DISCORD_TOKEN"))
+    try:
+        bot.run(os.environ.get("DISCORD_TOKEN"))
+    except Exception as e:
+        print(f"❌ LOGIN ERROR: {e}")
