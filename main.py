@@ -7,7 +7,7 @@ import random
 from flask import Flask
 from threading import Thread
 
-# --- 1. WEB SERVER ---
+# --- 1. WEB SERVER (For 24/7 Hosting on Render) ---
 app = Flask('')
 @app.route('/')
 def home(): return "GHOSTNET: ONLINE"
@@ -20,97 +20,137 @@ def keep_alive():
     t.daemon = True
     t.start()
 
-# --- 2. BOT SETUP ---
-# We are forcing all intents to be ON here
-intents = discord.Intents.all() 
+# --- 2. BOT SETUP & MEMORY ---
+intents = discord.Intents.all()  # Required for reading messages and roles
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.remove_command('help')
 
-# Memory
-welcome_settings = {"message": "Welcome {User_Mention}!", "channel_id": None, "auto_roles": []}
-goodbye_settings = {"message": "{User} left.", "channel_id": None}
+# System Memory
+welcome_settings = {
+    "message": "Welcome {User_Mention} to the mainframe!",
+    "channel_id": None,
+    "auto_roles": []
+}
 ISAAC_ID = 1444073106384621631
 
-# --- 3. UI CLASSES ---
-class WelcomeModal(ui.Modal, title='Set Message'):
+# --- 3. UI CLASSES (Buttons & Menus) ---
+class WelcomeModal(ui.Modal, title='Set Welcome Message'):
     welcome_msg = ui.TextInput(label='Message', style=discord.TextStyle.paragraph)
     async def on_submit(self, interaction: discord.Interaction):
         welcome_settings["message"] = self.welcome_msg.value
-        await interaction.response.send_message("✅ Message Saved!", ephemeral=True)
+        await interaction.response.send_message("✅ Welcome message saved!", ephemeral=True)
 
 class WelcomeSetupView(ui.View):
     def __init__(self):
         super().__init__(timeout=180)
         self.step = 1
+
     @ui.button(label="Next Step ➡️", style=discord.ButtonStyle.primary)
     async def next_step(self, interaction: discord.Interaction, button: ui.Button):
         if self.step == 1:
             self.step = 2
-            await interaction.response.edit_message(content="🛰️ **STEP 2: THE MESSAGE**", view=self)
+            await interaction.response.edit_message(content="🛰️ **STEP 2: THE MESSAGE**\nClick the button to set your text.", view=self)
             btn = ui.Button(label="Set Message", style=discord.ButtonStyle.secondary)
             btn.callback = lambda i: i.response.send_modal(WelcomeModal())
             self.add_item(btn)
         elif self.step == 2:
             self.step = 3
-            await interaction.response.edit_message(content="🛰️ **STEP 3: THE CHANNEL**", view=self)
+            await interaction.response.edit_message(content="🛰️ **STEP 3: THE CHANNEL**\nSelect where to broadcast.", view=self)
             select = ui.ChannelSelect(placeholder="Pick a channel...")
             async def s_callback(itn):
                 welcome_settings["channel_id"] = select.values[0].id
-                await itn.response.send_message(f"✅ Channel set!", ephemeral=True)
+                await itn.response.send_message(f"✅ Channel set to <#{select.values[0].id}>!", ephemeral=True)
             select.callback = s_callback
             self.add_item(select)
 
 class RoleSelectView(ui.View):
     def __init__(self):
         super().__init__(timeout=120)
-    @ui.select(cls=ui.RoleSelect, placeholder="Select roles...", min_values=1, max_values=5)
+
+    @ui.select(cls=ui.RoleSelect, placeholder="Select roles for new members...", min_values=1, max_values=5)
     async def select_roles(self, interaction: discord.Interaction, select: ui.RoleSelect):
         welcome_settings["auto_roles"] = [role.id for role in select.values]
-        await interaction.response.send_message(f"✅ Auto-roles saved!", ephemeral=True)
+        await interaction.response.send_message(f"✅ Auto-roles updated!", ephemeral=True)
 
 # --- 4. COMMANDS ---
-@bot.command()
-async def help(ctx):
-    embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x00ff00)
-    embed.add_field(name="Commands", value="`!welcome-setup`\n`!autoroles`\n`!hack @user`\n`!ping`", inline=False)
+@bot.command(name="help")
+async def help_cmd(ctx):
+    embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
+    embed.add_field(name="🛠️ CONFIG", value="`!welcome-setup` - Start Wizard\n`!autoroles` - Set Roles", inline=False)
+    embed.add_field(name="💀 PRANK", value="`!hack @user` - Simulated Breach", inline=False)
+    embed.add_field(name="📡 SYSTEM", value="`!ping` - Check Latency", inline=False)
+    embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
     await ctx.send(embed=embed)
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send(f"🛰️ Mainframe Latency: {round(bot.latency * 1000)}ms")
+    await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
 @bot.command()
 async def autoroles(ctx):
-    await ctx.send("🔐 **ROLE CONFIG**", view=RoleSelectView())
-
-@bot.command()
-async def hack(ctx, member: discord.Member = None):
-    if not member: return await ctx.send("Who are we hacking?")
-    msg = await ctx.send(f"💻 `Searching for {member.name}...`")
-    await asyncio.sleep(2)
-    await msg.edit(content=f"✅ {member.name} hacked. IP: {random.randint(100,255)}... (Simulated)")
+    await ctx.send("🔐 **GHOSTNET ROLE CONFIGURATION**", view=RoleSelectView())
 
 @bot.command()
 async def welcome_setup(ctx):
-    await ctx.send("🛠️ **Welcome Config**", view=WelcomeSetupView())
+    await ctx.send("🛠️ **Welcome Configuration**", view=WelcomeSetupView())
+
+@bot.command(name="hack")
+async def hack(ctx, member: discord.Member = None):
+    if member is None:
+        return await ctx.send("❌ Error: Tag someone to hack.")
+    
+    msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
+    await asyncio.sleep(2)
+    
+    if member.id == ISAAC_ID:
+        await msg.edit(content="`[██████████] 100% - BREACH SUCCESSFUL`")
+        await asyncio.sleep(1)
+        await msg.edit(content=f"⚠️ **DATA EXTRACTED**\n```diff\n- [WARNING]: TARGET VULNERABLE\n- [SYSTEM]: Tracking terminal 144.4.0.7```")
+    else:
+        await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned. IP: {random.randint(100,255)}.{random.randint(0,255)}.0.1")
 
 # --- 5. EVENTS ---
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
+    print(f"✅ LOGS: {bot.user.name} is online!")
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ LOGS: Synced {len(synced)} slash commands.")
+    except Exception as e:
+        print(f"❌ LOGS: Sync Error: {e}")
 
 @bot.event
 async def on_member_join(member):
+    # 1. Role Logic
     if member.id == ISAAC_ID:
         role = discord.utils.get(member.guild.roles, name="UNDER SURVEILLANCE")
         if role: await member.add_roles(role)
-    # Welcome message logic
+    else:
+        for r_id in welcome_settings["auto_roles"]:
+            role = member.guild.get_role(r_id)
+            if role: await member.add_roles(role)
+
+    # 2. Message Logic
     chan_id = welcome_settings["channel_id"]
     if chan_id:
         chan = bot.get_channel(chan_id)
-        if chan: await chan.send(f"🚨 TARGET: {member.mention}")
+        if chan:
+            if member.id == ISAAC_ID:
+                await chan.send(f"🚨 **TARGET IDENTIFIED: {member.mention}** 🚨\n```diff\n- [SYSTEM]: Welcome back, Isaac.```")
+            else:
+                msg = welcome_settings["message"].replace("{User_Mention}", member.mention).replace("{Server_Name}", member.guild.name)
+                await chan.send(f"🛰️ {msg}")
+
+@bot.event
+async def on_command_error(ctx, error):
+    print(f"❌ LOGS: Error on {ctx.command}: {error}")
 
 # --- 6. STARTUP ---
 if __name__ == "__main__":
     keep_alive()
-    bot.run(os.environ.get("DISCORD_TOKEN"))
+    # Make sure your Token is in the Environment Variables on Render!
+    token = os.environ.get("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
+    else:
+        print("❌ LOGS: No DISCORD_TOKEN found in Environment Variables!")
