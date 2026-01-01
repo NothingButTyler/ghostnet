@@ -71,44 +71,60 @@ class RoleSelectView(ui.View):
         welcome_settings["auto_roles"] = [role.id for role in select.values]
         await interaction.response.send_message(f"✅ Auto-roles updated!", ephemeral=True)
 
-# --- 4. COMMANDS ---
+# --- 4. COMMANDS (WITH ISAAC LOGIC) ---
 @bot.command(name="help")
 async def help_cmd(ctx):
-    embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-    embed.add_field(name="🛠️ CONFIG", value="`!welcome-setup` - Start Wizard\n`!autoroles` - Set Roles", inline=False)
-    embed.add_field(name="💀 PRANK", value="`!hack @user` - Simulated Breach", inline=False)
-    embed.add_field(name="📡 SYSTEM", value="`!ping` - Check Latency", inline=False)
-    embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
+    if ctx.author.id == ISAAC_ID:
+        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
+        embed.add_field(name="🛠️ CONFIG", value="`ERROR`", inline=False)
+        embed.set_footer(text="\"Error 404: Code cannot be found.")
+    else:
+        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
+        embed.add_field(name="🛠️ CONFIG", value="`!welcome-setup` - Start Wizard\n`!autoroles` - Set Roles", inline=False)
+        embed.add_field(name="💀 PRANK", value="`!hack @user` - Simulated Breach", inline=False)
+        embed.add_field(name="📡 SYSTEM", value="`!ping` - Check Latency", inline=False)
+        embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
     await ctx.send(embed=embed)
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
+    if ctx.author.id == ISAAC_ID:
+        await ctx.send("📡 **ERROR:** `PING CANNOT BE CALCULATED`")
+    else:
+        await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def autoroles(ctx):
-    await ctx.send("🔐 **GHOSTNET ROLE CONFIGURATION**", view=RoleSelectView())
+    if ctx.author.id == ISAAC_ID:
+        await ctx.send("🚫 **CRITICAL:** `Administrative override failed.`")
+    else:
+        await ctx.send("🔐 **GHOSTNET ROLE CONFIGURATION**", view=RoleSelectView())
 
 @bot.command(name="welcome-setup")
-@commands.has_permissions(administrator=True) # Added your safety line here!
+@commands.has_permissions(administrator=True)
 async def welcome_setup_cmd(ctx):
-    await ctx.send("🛠️ **Welcome Configuration**", view=WelcomeSetupView())
+    if ctx.author.id == ISAAC_ID:
+        await ctx.send("🚫 **CRITICAL:** `NO ADMINISTRATOR ACCESS`")
+    else:
+        await ctx.send("🛠️ **Welcome Configuration**", view=WelcomeSetupView())
 
 @bot.command(name="hack")
 async def hack(ctx, member: discord.Member = None):
     if member is None:
         return await ctx.send("❌ Error: Tag someone to hack.")
     
-    msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
-    await asyncio.sleep(2)
-    
-    if member.id == ISAAC_ID:
-        await msg.edit(content="`[██████████] 100% - BREACH SUCCESSFUL`")
-        await asyncio.sleep(1)
-        await msg.edit(content=f"⚠️ **DATA EXTRACTED**\n```diff\n- [WARNING]: TARGET VULNERABLE\n- [SYSTEM]: Tracking terminal 144.4.0.7```")
+    if ctx.author.id == ISAAC_ID:
+        await ctx.send("COMMAND NOT FOUND")
     else:
-        await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned. IP: {random.randint(100,255)}.{random.randint(0,255)}.0.1")
+        msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
+        await asyncio.sleep(2)
+        if member.id == ISAAC_ID:
+            await msg.edit(content="`[██████████] 100% - BREACH SUCCESSFUL`")
+            await asyncio.sleep(1)
+            await msg.edit(content=f"⚠️ **DATA EXTRACTED**\n```diff\n- [WARNING]: TARGET VULNERABLE\n- [SYSTEM]: Tracking terminal 144.4.0.7```")
+        else:
+            await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned. IP: {random.randint(100,255)}.{random.randint(0,255)}.0.1")
 
 # --- 5. EVENTS ---
 @bot.event
@@ -143,7 +159,6 @@ async def on_member_join(member):
 
 @bot.event
 async def on_command_error(ctx, error):
-    # This prints the error to logs and lets you know in Discord if you don't have perms
     print(f"❌ LOGS: Error on {ctx.command}: {error}")
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("🚫 **ACCESS DENIED:** You need Administrator permissions to use this.")
@@ -156,3 +171,4 @@ if __name__ == "__main__":
         bot.run(token)
     else:
         print("❌ LOGS: No DISCORD_TOKEN found!")
+        
