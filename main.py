@@ -35,27 +35,19 @@ ISAAC_ID = 1444073106384621631
 fake_isaacs = [] 
 global_prank = False 
 
-# --- 3. HELPER LOGIC (FIXED) ---
+# --- 3. HELPER LOGIC ---
 def is_treated_as_isaac(ctx):
     """Determines if the user should see the 'broken' version of the bot."""
-    # EMERGENCY BYPASS: If you are the Server Owner or have Admin perms, 
-    # the bot will never lock you out of your own commands.
     if ctx.author.guild_permissions.administrator:
         return False
-
-    # 1. Hack Ticket role bypass
     if discord.utils.get(ctx.author.roles, name="Hack Ticket"):
         return False
-        
-    # 2. If Global Prank is ON, everyone else is Isaac
     if global_prank:
         return True
-        
-    # 3. Individual check
     return ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs
 
 # --- 4. UI CLASSES ---
-# (Keeping these for your setup commands)
+# (Keeping your existing UI classes for Welcome Setup)
 class WelcomeModal(ui.Modal, title='Set Welcome Message'):
     welcome_msg = ui.TextInput(label='Message', style=discord.TextStyle.paragraph)
     async def on_submit(self, interaction: discord.Interaction):
@@ -104,54 +96,9 @@ async def prank_stop(ctx):
 
 @bot.command(name="help")
 async def help_cmd(ctx):
-    # Pass the whole context to the helper
     if is_treated_as_isaac(ctx):
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`ERROR: DIRECTORY ENCRYPTION ACTIVE`", inline=False)
         embed.set_footer(text="Error 404: Code cannot be found.")
         await ctx.send(embed=embed)
     elif ctx.author.guild_permissions.administrator:
-        embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
-        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user`, `!prank-start`, `!prank-stop`", inline=False)
-        embed.add_field(name="📡 SYSTEM", value="`!ping` - Latency Check", inline=False)
-        await ctx.send(embed=embed)
-    else:
-        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="💀 PRANK", value="`!hack @user`", inline=False)
-        await ctx.send(embed=embed)
-
-@bot.command()
-async def ping(ctx):
-    if is_treated_as_isaac(ctx):
-        await ctx.send("📡 **ERROR:** `PING CANNOT BE CALCULATED`")
-    else:
-        await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
-
-@bot.command(name="hack")
-async def hack(ctx, member: discord.Member = None):
-    if is_treated_as_isaac(ctx):
-        return await ctx.send("`COMMAND NOT FOUND`")
-    if member is None:
-        return await ctx.send("❌ Error: Tag someone to hack.")
-    
-    msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
-    await asyncio.sleep(2)
-    await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned.")
-
-# --- 6. EVENTS ---
-@bot.event
-async def on_ready():
-    print(f"✅ LOGS: {bot.user.name} is online!")
-
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    await bot.process_commands(message)
-
-# --- 7. STARTUP ---
-if __name__ == "__main__":
-    keep_alive()
-    token = os.environ.get("DISCORD_TOKEN")
-    if token:
-        bot.run(token)
