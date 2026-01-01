@@ -30,10 +30,24 @@ welcome_settings = {
     "channel_id": None,
     "auto_roles": []
 }
+
 ISAAC_ID = 1444073106384621631
 fake_isaacs = [] 
+global_prank = False # Controls if everyone is treated like Isaac
 
-# --- 3. UI CLASSES ---
+# --- 3. HELPER LOGIC ---
+def is_treated_as_isaac(member):
+    """Determines if the user should see the 'broken' version of the bot."""
+    # 1. Hack Ticket role bypasses the prank entirely
+    if discord.utils.get(member.roles, name="Hack Ticket"):
+        return False
+    # 2. If Global Prank is ON, everyone else is Isaac
+    if global_prank:
+        return True
+    # 3. Individual check for Isaac or admins testing the prank
+    return member.id == ISAAC_ID or member.id in fake_isaacs
+
+# --- 4. UI CLASSES ---
 class WelcomeModal(ui.Modal, title='Set Welcome Message'):
     welcome_msg = ui.TextInput(label='Message', style=discord.TextStyle.paragraph)
     async def on_submit(self, interaction: discord.Interaction):
@@ -72,7 +86,23 @@ class RoleSelectView(ui.View):
         welcome_settings["auto_roles"] = [role.id for role in select.values]
         await interaction.response.send_message(f"✅ Auto-roles updated!", ephemeral=True)
 
-# --- 4. COMMANDS ---
+# --- 5. COMMANDS ---
+
+@bot.command(name="prank-start")
+@commands.has_permissions(administrator=True)
+async def prank_start(ctx):
+    global global_prank
+    global_prank = True
+    await bot.change_presence(activity=discord.Game(name="⚠️ SYSTEM MALFUNCTION"))
+    await ctx.send("🚨 **GLOBAL PROTOCOL 404:** Every user is now being tracked. Mainframe stability: **0%**.")
+
+@bot.command(name="prank-stop")
+@commands.has_permissions(administrator=True)
+async def prank_stop(ctx):
+    global global_prank
+    global_prank = False
+    await bot.change_presence(activity=discord.Game(name="🛰️ Monitoring Mainframe"))
+    await ctx.send("🔓 **RECOVERY SUCCESSFUL:** System stability restored. Global tracking disabled.")
 
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
@@ -85,81 +115,56 @@ async def test_prank(ctx, member: discord.Member = None):
         if role: 
             try: await target.remove_roles(role)
             except: pass
-        await ctx.send(f"🔓 **TEST MODE:** {target.display_name} is no longer being treated as Isaac.")
+        await ctx.send(f"🔓 **TEST MODE:** {target.display_name} is no longer Isaac.")
     else:
         fake_isaacs.append(target.id)
         if role: 
             try: await target.add_roles(role)
             except: pass
-        await ctx.send(f"🚨 **TEST MODE:** {target.display_name} is now being treated as Isaac for testing purposes.")
+        await ctx.send(f"🚨 **TEST MODE:** {target.display_name} is now Isaac.")
 
 @bot.command(name="help")
 async def help_cmd(ctx):
-    # ISAAC / PRANK VIEW
-    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
+    if is_treated_as_isaac(ctx.author):
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="🛠️ CONFIG", value="`ERROR`", inline=False)
+        embed.add_field(name="🛠️ CONFIG", value="`ERROR: DIRECTORY ENCRYPTION ACTIVE`", inline=False)
         embed.set_footer(text="\"Error 404: Code cannot be found.")
         await ctx.send(embed=embed)
-    # ADMIN VIEW
     elif ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.description = "**Secure Administrative Access Granted.**"
-        embed.add_field(name="🛠️ CONFIGURATION", value="`!welcome-setup` - Edit the welcome message\n`!autoroles` - Role Manager", inline=False)
-        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user` - Simulated Breach\n`!test-prank @user` - Toggle Isaac Logic", inline=False)
+        embed.add_field(name="🛠️ CONFIGURATION", value="`!welcome-setup`, `!autoroles`", inline=False)
+        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user`, `!prank-start`, `!prank-stop`", inline=False)
         embed.add_field(name="📡 SYSTEM", value="`!ping` - Latency Check", inline=False)
-        embed.set_footer(text="🛡️ Admin Interface | Total Control")
         await ctx.send(embed=embed)
-    # MEMBER VIEW
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="🛠️ CONFIG", value="`Locked` - Admins Only", inline=False)
         embed.add_field(name="💀 PRANK", value="`!hack @user` - Try it!", inline=False)
         embed.add_field(name="📡 SYSTEM", value="`!ping` - Check Latency", inline=False)
-        embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
         await ctx.send(embed=embed)
 
 @bot.command()
 async def ping(ctx):
-    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
+    if is_treated_as_isaac(ctx.author):
         await ctx.send("📡 **ERROR:** `PING CANNOT BE CALCULATED`")
     else:
         await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def autoroles(ctx):
-    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
-        await ctx.send("🚫 **CRITICAL:** `Administrative override failed.`")
-    else:
-        await ctx.send("🔐 **GHOSTNET ROLE CONFIGURATION**", view=RoleSelectView())
-
-@bot.command(name="welcome-setup")
-@commands.has_permissions(administrator=True)
-async def welcome_setup_cmd(ctx):
-    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
-        await ctx.send("🚫 **CRITICAL:** `NO ADMINISTRATOR ACCESS`")
-    else:
-        await ctx.send("🛠️ **Welcome Configuration**", view=WelcomeSetupView())
-
 @bot.command(name="hack")
 async def hack(ctx, member: discord.Member = None):
+    if is_treated_as_isaac(ctx.author):
+        return await ctx.send("`COMMAND NOT FOUND`")
     if member is None:
         return await ctx.send("❌ Error: Tag someone to hack.")
     
-    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
-        await ctx.send("COMMAND NOT FOUND")
+    msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
+    await asyncio.sleep(2)
+    if member.id == ISAAC_ID:
+        await msg.edit(content="`[██████████] 100% - BREACH SUCCESSFUL`\n⚠️ **DATA EXTRACTED:** 144.4.0.7")
     else:
-        msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
-        await asyncio.sleep(2)
-        if member.id == ISAAC_ID:
-            await msg.edit(content="`[██████████] 100% - BREACH SUCCESSFUL`")
-            await asyncio.sleep(1)
-            await msg.edit(content=f"⚠️ **DATA EXTRACTED**\n```diff\n- [WARNING]: TARGET VULNERABLE\n- [SYSTEM]: Tracking terminal 144.4.0.7```")
-        else:
-            await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned. IP: {random.randint(100,255)}.{random.randint(0,255)}.0.1")
+        await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned.")
 
-# --- 5. EVENTS ---
+# --- 6. EVENTS ---
 @bot.event
 async def on_ready():
     print(f"✅ LOGS: {bot.user.name} is online!")
@@ -168,4 +173,11 @@ async def on_ready():
 async def on_message(message):
     if message.author == bot.user:
         return
-    # CRITICAL FIX: This allows the bot to process commands after
+    await bot.process_commands(message)
+
+# --- 7. STARTUP ---
+if __name__ == "__main__":
+    keep_alive()
+    token = os.environ.get("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
