@@ -47,7 +47,6 @@ def is_treated_as_isaac(ctx):
     return ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs
 
 # --- 4. UI CLASSES ---
-# (Keeping your existing UI classes for Welcome Setup)
 class WelcomeModal(ui.Modal, title='Set Welcome Message'):
     welcome_msg = ui.TextInput(label='Message', style=discord.TextStyle.paragraph)
     async def on_submit(self, interaction: discord.Interaction):
@@ -102,3 +101,60 @@ async def help_cmd(ctx):
         embed.set_footer(text="Error 404: Code cannot be found.")
         await ctx.send(embed=embed)
     elif ctx.author.guild_permissions.administrator:
+        embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
+        embed.add_field(name="🛠️ CONFIG", value="`!welcome-setup`, `!autoroles`", inline=False)
+        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user`, `!prank-start`, `!prank-stop`", inline=False)
+        embed.add_field(name="📡 SYSTEM", value="`!ping` - Latency Check", inline=False)
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
+        embed.add_field(name="💀 PRANK", value="`!hack @user`", inline=False)
+        embed.add_field(name="📡 SYSTEM", value="`!ping`", inline=False)
+        await ctx.send(embed=embed)
+
+@bot.command()
+async def ping(ctx):
+    if is_treated_as_isaac(ctx):
+        await ctx.send("📡 **ERROR:** `PING CANNOT BE CALCULATED`")
+    else:
+        await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
+
+@bot.command(name="hack")
+async def hack(ctx, member: discord.Member = None):
+    # Prank check
+    if is_treated_as_isaac(ctx):
+        return await ctx.send("`COMMAND NOT FOUND`")
+    
+    # Check if user exists
+    if member is None:
+        return await ctx.send("❌ Error: Tag someone to hack.")
+    
+    # BOT PROTECTION BLOCK (Must stay at the top)
+    if member.bot:
+        return await ctx.send("🛰️ **SYSTEM:** `Get off my kind!`")
+    
+    msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
+    await asyncio.sleep(2)
+    
+    if member.id == ISAAC_ID:
+        await msg.edit(content="`[██████████] 100% - BREACH SUCCESSFUL`\n⚠️ **DATA EXTRACTED:** 144.4.0.7")
+    else:
+        await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned. IP: {random.randint(100,255)}.{random.randint(0,255)}.0.1")
+
+# --- 6. EVENTS ---
+@bot.event
+async def on_ready():
+    print(f"✅ LOGS: {bot.user.name} is online!")
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    await bot.process_commands(message)
+
+# --- 7. STARTUP ---
+if __name__ == "__main__":
+    keep_alive()
+    token = os.environ.get("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
