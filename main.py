@@ -76,16 +76,29 @@ class RoleSelectView(ui.View):
 
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
-async def test_prank(ctx):
+async def test_prank(ctx, member: discord.Member = None):
+    # If you don't tag anyone, it targets YOU. If you tag someone, it targets THEM.
+    target = member if member else ctx.author
+    
     role = discord.utils.get(ctx.guild.roles, name="UNDER SURVEILLANCE")
-    if ctx.author.id in fake_isaacs:
-        fake_isaacs.remove(ctx.author.id)
-        if role: await ctx.author.remove_roles(role)
-        await ctx.send("🔓 **TEST MODE:** You are no longer being treated as Isaac.")
+    
+    if target.id in fake_isaacs:
+        fake_isaacs.remove(target.id)
+        if role: 
+            try:
+                await target.remove_roles(role)
+            except:
+                pass # This prevents a crash if the bot lacks role permissions
+        await ctx.send(f"🔓 **TEST MODE:** {target.display_name} is no longer being treated as Isaac.")
     else:
-        fake_isaacs.append(ctx.author.id)
-        if role: await ctx.author.add_roles(role)
-        await ctx.send("🚨 **TEST MODE:** You are now being treated as Isaac for testing purposes.")
+        fake_isaacs.append(target.id)
+        if role: 
+            try:
+                await target.add_roles(role)
+            except:
+                pass
+        await ctx.send(f"🚨 **TEST MODE:** {target.display_name} is now being treated as Isaac for testing purposes.")
+
 
 @bot.command(name="help")
 async def help_cmd(ctx):
