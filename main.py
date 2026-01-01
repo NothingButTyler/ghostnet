@@ -7,7 +7,7 @@ import random
 from flask import Flask
 from threading import Thread
 
-# --- 1. WEB SERVER (For 24/7 Hosting) ---
+# --- 1. WEB SERVER ---
 app = Flask('')
 @app.route('/')
 def home(): return "GHOSTNET: ONLINE"
@@ -32,7 +32,6 @@ global_prank = False
 
 # --- 3. HELPER LOGIC ---
 def is_treated_as_isaac(ctx):
-    """Checks if the user should see the 'glitched' version of the bot."""
     if ctx.author.guild_permissions.administrator: return False
     if discord.utils.get(ctx.author.roles, name="Hack Ticket"): return False
     if global_prank: return True
@@ -43,7 +42,7 @@ class WelcomeModal(ui.Modal, title='Set Welcome Message'):
     welcome_msg = ui.TextInput(label='Message', style=discord.TextStyle.paragraph)
     async def on_submit(self, interaction: discord.Interaction):
         welcome_settings["message"] = self.welcome_msg.value
-        await interaction.response.send_message("✅ Welcome message saved!", ephemeral=True)
+        await interaction.response.send_message("✅ Welcome saved!", ephemeral=True)
 
 class WelcomeSetupView(ui.View):
     def __init__(self):
@@ -69,22 +68,6 @@ class WelcomeSetupView(ui.View):
 
 # --- 5. COMMANDS ---
 
-@bot.command(name="prank-start")
-@commands.has_permissions(administrator=True)
-async def prank_start(ctx):
-    global global_prank
-    global_prank = True
-    await bot.change_presence(activity=discord.Game(name="⚠️ SYSTEM MALFUNCTION"))
-    await ctx.send("🚨 **GLOBAL PROTOCOL 404:** Every user is now being tracked.")
-
-@bot.command(name="prank-stop")
-@commands.has_permissions(administrator=True)
-async def prank_stop(ctx):
-    global global_prank
-    global_prank = False
-    await bot.change_presence(activity=discord.Game(name="🛰️ Monitoring Mainframe"))
-    await ctx.send("🔓 **RECOVERY SUCCESSFUL:** System stability restored.")
-
 @bot.command(name="help")
 async def help_cmd(ctx):
     if is_treated_as_isaac(ctx):
@@ -94,39 +77,55 @@ async def help_cmd(ctx):
 
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
-        embed.description = "🛡️ **Welcome, Operator.**"
+        embed.description = "🛡️ **Welcome, Operator.** Accessing classified modules..."
+        
+        # FIXED: Combined all staff tools into fields to ensure they all show up
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user`\n`!ghost-ping @user`\n`!prank-start` / `!prank-stop`", 
+                        value="`!hack @user` - Fake breach\n`!ghost-ping @user` - Phantom notification\n`!prank-start` - Activate Overload\n`!prank-stop` - Reset System", 
                         inline=False)
-        embed.add_field(name="🛠️ UTILITY", 
-                        value="`!terminal-clear [amount]`\n`!ping`", 
+        
+        embed.add_field(name="🛠️ UTILITY & SETUP", 
+                        value="`!terminal-clear [amount]` - Wipe messages\n`!welcome-setup` - Start UI Guide\n`!ping` - Latency check", 
                         inline=False)
+        
         return await ctx.send(embed=embed)
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="💀 COMMANDS", value="`!hack @user`\n`!ping`", inline=False)
         await ctx.send(embed=embed)
 
-@bot.command(name="terminal-clear")
-@commands.has_permissions(manage_messages=True)
-async def terminal_clear(ctx, amount: int = 5):
+@bot.command(name="welcome-setup")
+@commands.has_permissions(administrator=True)
+async def welcome_setup(ctx):
     if is_treated_as_isaac(ctx): return
-    await ctx.message.delete()
-    msg = await ctx.send(f"🧹 `Wiping {amount} packets of evidence...`")
-    await asyncio.sleep(1.5)
-    await ctx.channel.purge(limit=amount)
-    await msg.delete()
+    await ctx.send("🛰️ **GHOSTNET WELCOME CONFIGURATION**\nStep 1: Click the button to begin.", view=WelcomeSetupView())
 
 @bot.command(name="ghost-ping")
 @commands.has_permissions(administrator=True)
 async def ghost_ping(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
     if member is None: return await ctx.send("❌ Error: Tag a target.", delete_after=5)
+    
+    try:
+        # Maximum stealth: delete your command first
+        await ctx.message.delete()
+        # Send ping
+        ping_msg = await ctx.send(f"{member.mention}")
+        # Wait just enough for Discord to send the push notification
+        await asyncio.sleep(0.7) 
+        # Wipe the evidence
+        await ping_msg.delete()
+    except Exception as e:
+        print(f"Ghost-ping error: {e}")
+
+@bot.command(name="terminal-clear")
+@commands.has_permissions(manage_messages=True)
+async def terminal_clear(ctx, amount: int = 5):
+    if is_treated_as_isaac(ctx): return
     try:
         await ctx.message.delete()
-        ping_msg = await ctx.send(member.mention)
-        await asyncio.sleep(0.5)
-        await ping_msg.delete()
+        await ctx.channel.purge(limit=amount)
+        msg = await ctx.send(f"🧹 `Mainframe cleared. {amount} packets purged.`", delete_after=3)
     except: pass
 
 @bot.command(name="hack")
@@ -144,6 +143,22 @@ async def ping(ctx):
     if is_treated_as_isaac(ctx): await ctx.send("📡 **ERROR:** `PING FAILED`")
     else: await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
+@bot.command(name="prank-start")
+@commands.has_permissions(administrator=True)
+async def prank_start(ctx):
+    global global_prank
+    global_prank = True
+    await bot.change_presence(activity=discord.Game(name="⚠️ SYSTEM MALFUNCTION"))
+    await ctx.send("🚨 **GLOBAL PROTOCOL 404 ACTIVE**")
+
+@bot.command(name="prank-stop")
+@commands.has_permissions(administrator=True)
+async def prank_stop(ctx):
+    global global_prank
+    global_prank = False
+    await bot.change_presence(activity=discord.Game(name="🛰️ Monitoring Mainframe"))
+    await ctx.send("🔓 **SYSTEM RECOVERY SUCCESSFUL**")
+
 # --- 6. EVENTS ---
 @bot.event
 async def on_ready():
@@ -152,8 +167,6 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     if message.author == bot.user: return
-
-    # ONE ON_MESSAGE EVENT ONLY (Prevents Double Responses)
     if global_prank and not (message.author.guild_permissions.administrator or discord.utils.get(message.author.roles, name="Hack Ticket")):
         if random.random() < 0.15:
             if random.choice([True, False]):
@@ -161,14 +174,8 @@ async def on_message(message):
                 except: pass
             else:
                 await message.channel.send("`01000101 01010010 01010010 01001111 01010010`", delete_after=3)
-
     await bot.process_commands(message)
 
-# --- 7. STARTUP ---
 if __name__ == "__main__":
     keep_alive()
-    token = os.environ.get("DISCORD_TOKEN")
-    if token:
-        bot.run(token)
-    else:
-        print("❌ LOGS: No DISCORD_TOKEN found!")
+    bot.run(os.environ.get("DISCORD_TOKEN"))
