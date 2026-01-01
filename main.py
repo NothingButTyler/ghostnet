@@ -21,6 +21,7 @@ def keep_alive():
     t.start()
 
 # --- 2. BOT SETUP & MEMORY ---
+# CRITICAL: If commands don't work, double check "Message Content Intent" in Dev Portal
 intents = discord.Intents.all() 
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.remove_command('help')
@@ -79,10 +80,10 @@ async def help_cmd(ctx):
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.description = "🛡️ **Welcome, Operator.** Accessing classified modules..."
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user` - Fake breach\n`!ghost-ping @user` - Phantom notification\n`!prank-start` - Activate Overload\n`!prank-stop` - Reset System", 
+                        value="`!hack @user`\n`!ghost-ping @user`\n`!prank-start`\n`!prank-stop`", 
                         inline=False)
         embed.add_field(name="🛠️ UTILITY & SETUP", 
-                        value="`!terminal-clear [amount]` - Wipe messages\n`!welcome-setup` - Start UI Guide\n`!ping` - Latency check", 
+                        value="`!terminal-clear [amount]`\n`!welcome-setup`\n`!ping`", 
                         inline=False)
         return await ctx.send(embed=embed)
     else:
@@ -94,58 +95,43 @@ async def help_cmd(ctx):
 @commands.has_permissions(administrator=True)
 async def welcome_setup(ctx):
     if is_treated_as_isaac(ctx): return
-    await ctx.send("🛰️ **GHOSTNET WELCOME CONFIGURATION**\nStep 1: Click the button to begin.", view=WelcomeSetupView())
+    await ctx.send("🛰️ **GHOSTNET WELCOME CONFIGURATION**", view=WelcomeSetupView())
 
 @bot.command(name="ghost-ping")
 @commands.has_permissions(administrator=True)
 async def ghost_ping(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
-    if member is None: return await ctx.send("❌ Error: Tag a target.", delete_after=5)
-    
-    try:
-        await ctx.message.delete()
-        ping_msg = await ctx.send(f"{member.mention}")
-        await asyncio.sleep(0.7) 
-        await ping_msg.delete()
-    except Exception as e:
-        print(f"Ghost-ping error: {e}")
+    if member is None: return await ctx.send("❌ Tag a target.", delete_after=5)
+    await ctx.message.delete()
+    ping_msg = await ctx.send(f"{member.mention}")
+    await asyncio.sleep(0.7) 
+    await ping_msg.delete()
 
 @bot.command(name="terminal-clear")
 @commands.has_permissions(manage_messages=True)
 async def terminal_clear(ctx, amount: int = 5):
     if is_treated_as_isaac(ctx): return
-    try:
-        # We purge 'amount + 1' to include the command itself if not deleted manually
-        # But since we delete it first, purge handles the rest.
-        await ctx.message.delete()
-        deleted = await ctx.channel.purge(limit=amount)
-        await ctx.send(f"🧹 `Mainframe cleared. {len(deleted)} packets purged.`", delete_after=3)
-    except discord.Forbidden:
-        await ctx.send("❌ **ERROR:** Missing Permissions.", delete_after=5)
-    except Exception as e:
-        print(f"Clear error: {e}")
+    await ctx.message.delete()
+    deleted = await ctx.channel.purge(limit=amount)
+    await ctx.send(f"🧹 `Cleared {len(deleted)} packets.`", delete_after=3)
 
 @bot.command(name="hack")
 async def hack(ctx, member: discord.Member = None):
-    if is_treated_as_isaac(ctx): return await ctx.send("`COMMAND NOT FOUND`")
-    if member is None: return await ctx.send("❌ Error: Tag someone.")
-    if member.bot: return await ctx.send("🛰️ **SYSTEM:** `Get off my kind!`")
-    
-    msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
+    if is_treated_as_isaac(ctx): return
+    if member is None: return await ctx.send("❌ Tag someone.")
+    msg = await ctx.send(f"💻 `Breaching {member.name}...`")
     await asyncio.sleep(2)
-    await msg.edit(content=f"✅ **HACK COMPLETE.** {member.name} pwned.")
+    await msg.edit(content=f"✅ **HACK COMPLETE.**")
 
 @bot.command()
 async def ping(ctx):
-    if is_treated_as_isaac(ctx): await ctx.send("📡 **ERROR:** `PING FAILED`")
-    else: await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
+    await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
 @bot.command(name="prank-start")
 @commands.has_permissions(administrator=True)
 async def prank_start(ctx):
     global global_prank
     global_prank = True
-    await bot.change_presence(activity=discord.Game(name="⚠️ SYSTEM MALFUNCTION"))
     await ctx.send("🚨 **GLOBAL PROTOCOL 404 ACTIVE**")
 
 @bot.command(name="prank-stop")
@@ -153,37 +139,30 @@ async def prank_start(ctx):
 async def prank_stop(ctx):
     global global_prank
     global_prank = False
-    await bot.change_presence(activity=discord.Game(name="🛰️ Monitoring Mainframe"))
     await ctx.send("🔓 **SYSTEM RECOVERY SUCCESSFUL**")
 
 # --- 6. EVENTS ---
 @bot.event
 async def on_ready():
-    print(f"✅ LOGS: {bot.user.name} is online!")
+    print(f"✅ LOGS: {bot.user.name} is online and ready!")
 
 @bot.event
 async def on_message(message):
-    # Ignore the bot's own messages to prevent infinite loops
     if message.author == bot.user:
         return
 
-    # Check for Isaac/Prank logic
-    if global_prank and not (message.author.guild_permissions.administrator or discord.utils.get(message.author.roles, name="Hack Ticket")):
+    # Debug: This will print every message the bot sees to your console
+    # If you don't see this when you type, your "Intents" are off.
+    print(f"📩 Message from {message.author}: {message.content}")
+
+    if global_prank and not message.author.guild_permissions.administrator:
         if random.random() < 0.15:
-            if random.choice([True, False]):
-                try: await message.add_reaction("⚡")
-                except: pass
-            else:
-                await message.channel.send("`01000101 01010010 01010010 01001111 01010010`", delete_after=3)
-    
-    # This line is CRITICAL - without it, commands won't work because on_message intercepts them
+            await message.channel.send("`ERROR 404`", delete_after=2)
+
     await bot.process_commands(message)
 
 # --- 7. STARTUP ---
 if __name__ == "__main__":
     keep_alive()
-    token = os.environ.get("DISCORD_TOKEN")
-    if token:
-        bot.run(token)
-    else:
-        print("❌ LOGS: DISCORD_TOKEN not found!")
+    bot.run(os.environ.get("DISCORD_TOKEN"))
+    
