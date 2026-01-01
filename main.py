@@ -31,7 +31,7 @@ welcome_settings = {
     "auto_roles": []
 }
 ISAAC_ID = 1444073106384621631
-fake_isaacs = [] # List to store admins testing the prank
+fake_isaacs = [] 
 
 # --- 3. UI CLASSES ---
 class WelcomeModal(ui.Modal, title='Set Welcome Message'):
@@ -72,16 +72,19 @@ class RoleSelectView(ui.View):
         welcome_settings["auto_roles"] = [role.id for role in select.values]
         await interaction.response.send_message(f"✅ Auto-roles updated!", ephemeral=True)
 
-# --- 4. COMMANDS (WITH ISAAC & TEST LOGIC) ---
+# --- 4. COMMANDS ---
 
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
 async def test_prank(ctx):
+    role = discord.utils.get(ctx.guild.roles, name="UNDER SURVEILLANCE")
     if ctx.author.id in fake_isaacs:
         fake_isaacs.remove(ctx.author.id)
+        if role: await ctx.author.remove_roles(role)
         await ctx.send("🔓 **TEST MODE:** You are no longer being treated as Isaac.")
     else:
         fake_isaacs.append(ctx.author.id)
+        if role: await ctx.author.add_roles(role)
         await ctx.send("🚨 **TEST MODE:** You are now being treated as Isaac for testing purposes.")
 
 @bot.command(name="help")
@@ -95,6 +98,7 @@ async def help_cmd(ctx):
         embed.add_field(name="🛠️ CONFIG", value="`!welcome-setup` - Start Wizard\n`!autoroles` - Set Roles", inline=False)
         embed.add_field(name="💀 PRANK", value="`!hack @user` - Simulated Breach", inline=False)
         embed.add_field(name="📡 SYSTEM", value="`!ping` - Check Latency", inline=False)
+        embed.add_field(name="🧪 TEST", value="`!test-prank` - Toggle Isaac Mode", inline=False)
         embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
     await ctx.send(embed=embed)
 
@@ -148,6 +152,29 @@ async def on_message(message):
     if message.author == bot.user:
         return
     await bot.process_commands(message)
+
+@bot.event
+async def on_member_join(member):
+    # Prank Logic for Isaac
+    if member.id == ISAAC_ID:
+        role = discord.utils.get(member.guild.roles, name="UNDER SURVEILLANCE")
+        if role: await member.add_roles(role)
+    # Normal Auto-Roles
+    else:
+        for r_id in welcome_settings["auto_roles"]:
+            role = member.guild.get_role(r_id)
+            if role: await member.add_roles(role)
+
+    # Welcome Message Logic
+    chan_id = welcome_settings["channel_id"]
+    if chan_id:
+        chan = bot.get_channel(chan_id)
+        if chan:
+            if member.id == ISAAC_ID:
+                await chan.send(f"🚨 **TARGET IDENTIFIED: {member.mention}** 🚨\n```diff\n- [SYSTEM]: Welcome back, Isaac.```")
+            else:
+                msg = welcome_settings["message"].replace("{User_Mention}", member.mention).replace("{Server_Name}", member.guild.name)
+                await chan.send(f"🛰️ {msg}")
 
 @bot.event
 async def on_command_error(ctx, error):
