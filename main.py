@@ -77,43 +77,50 @@ class RoleSelectView(ui.View):
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
 async def test_prank(ctx, member: discord.Member = None):
-    # If you don't tag anyone, it targets YOU. If you tag someone, it targets THEM.
     target = member if member else ctx.author
-    
     role = discord.utils.get(ctx.guild.roles, name="UNDER SURVEILLANCE")
     
     if target.id in fake_isaacs:
         fake_isaacs.remove(target.id)
         if role: 
-            try:
-                await target.remove_roles(role)
-            except:
-                pass # This prevents a crash if the bot lacks role permissions
+            try: await target.remove_roles(role)
+            except: pass
         await ctx.send(f"🔓 **TEST MODE:** {target.display_name} is no longer being treated as Isaac.")
     else:
         fake_isaacs.append(target.id)
         if role: 
-            try:
-                await target.add_roles(role)
-            except:
-                pass
+            try: await target.add_roles(role)
+            except: pass
         await ctx.send(f"🚨 **TEST MODE:** {target.display_name} is now being treated as Isaac for testing purposes.")
 
 
 @bot.command(name="help")
 async def help_cmd(ctx):
+    # --- ISAAC / PRANK VIEW ---
     if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`ERROR`", inline=False)
         embed.set_footer(text="\"Error 404: Code cannot be found.")
+        await ctx.send(embed=embed)
+
+    # --- ADMIN / STAFF VIEW ---
+    elif ctx.author.guild_permissions.administrator:
+        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x00ff00)
+        embed.description = "**Secure Administrative Access Granted.**"
+        embed.add_field(name="🛠️ CONFIGURATION", value="`!welcome-setup` - UI Wizard\n`!autoroles` - Role Manager", inline=False)
+        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user` - Simulated Breach\n`!test-prank @user` - Toggle Isaac Logic", inline=False)
+        embed.add_field(name="📡 SYSTEM", value="`!ping` - Latency Check", inline=False)
+        embed.set_footer(text="🛡️ Admin Interface | Total Control")
+        await ctx.send(embed=embed)
+
+    # --- STANDARD MEMBER VIEW ---
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="🛠️ CONFIG", value="`!welcome-setup` - Start Wizard\n`!autoroles` - Set Roles", inline=False)
-        embed.add_field(name="💀 PRANK", value="`!hack @user` - Simulated Breach", inline=False)
+        embed.add_field(name="🛠️ CONFIG", value="`Locked` - Admins Only", inline=False)
+        embed.add_field(name="💀 PRANK", value="`!hack @user` - Try it!", inline=False)
         embed.add_field(name="📡 SYSTEM", value="`!ping` - Check Latency", inline=False)
-        embed.add_field(name="🧪 TEST", value="`!test-prank` - Toggle Isaac Mode", inline=False)
         embed.set_footer(text="\"Pretty cool, right?\" - Sambucha")
-    await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
 @bot.command()
 async def ping(ctx):
@@ -168,17 +175,14 @@ async def on_message(message):
 
 @bot.event
 async def on_member_join(member):
-    # Prank Logic for Isaac
     if member.id == ISAAC_ID:
         role = discord.utils.get(member.guild.roles, name="UNDER SURVEILLANCE")
         if role: await member.add_roles(role)
-    # Normal Auto-Roles
     else:
         for r_id in welcome_settings["auto_roles"]:
             role = member.guild.get_role(r_id)
             if role: await member.add_roles(role)
 
-    # Welcome Message Logic
     chan_id = welcome_settings["channel_id"]
     if chan_id:
         chan = bot.get_channel(chan_id)
@@ -199,13 +203,10 @@ async def on_command_error(ctx, error):
 if __name__ == "__main__":
     print("🛰️ LOGS: Starting Web Server...")
     keep_alive()
-    
     token = os.environ.get("DISCORD_TOKEN")
     if token:
-        print("🛰️ LOGS: Token found! Attempting to connect to Discord...")
-        try:
-            bot.run(token)
-        except Exception as e:
-            print(f"❌ LOGS: CRITICAL LOGIN ERROR: {e}")
+        print("🛰️ LOGS: Token found! Connecting...")
+        try: bot.run(token)
+        except Exception as e: print(f"❌ LOGS: LOGIN ERROR: {e}")
     else:
-        print("❌ LOGS: No DISCORD_TOKEN found in Environment Variables!")
+        print("❌ LOGS: No DISCORD_TOKEN found!")
