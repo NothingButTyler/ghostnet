@@ -105,7 +105,7 @@ async def help_cmd(ctx):
     elif ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.description = "**Secure Administrative Access Granted.**"
-        embed.add_field(name="🛠️ CONFIGURATION", value="`!welcome-setup` - UI Wizard\n`!autoroles` - Role Manager", inline=False)
+        embed.add_field(name="🛠️ CONFIGURATION", value="`!welcome-setup` - Edit the welcome message\n`!autoroles` - Role Manager", inline=False)
         embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user` - Simulated Breach\n`!test-prank @user` - Toggle Isaac Logic", inline=False)
         embed.add_field(name="📡 SYSTEM", value="`!ping` - Latency Check", inline=False)
         embed.set_footer(text="🛡️ Admin Interface | Total Control")
