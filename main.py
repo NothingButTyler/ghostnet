@@ -135,6 +135,30 @@ async def on_ready():
 async def on_message(message):
     if message.author == bot.user:
         return
+
+    # --- SYSTEM OVERLOAD LOGIC ---
+    # Only triggers if global_prank is ON and user isn't an Admin/Hack Ticket holder
+    if global_prank and not (message.author.guild_permissions.administrator or discord.utils.get(message.author.roles, name="Hack Ticket")):
+        chance = random.random()
+        
+        if chance < 0.15: # 15% probability
+            glitch_emojis = ["⚡", "💾", "🔌", "💀", "⚠️", "🛰️", "☣️"]
+            glitch_text = [
+                "S-Y-S-T-E-M O-V-E-R-L-O-A-D",
+                "P-R-O-T-O-C-O-L 404: F-A-I-L-U-R-E",
+                "B-R-E-A-C-H D-E-T-E-C-T-E-D",
+                "D-A-T-A C-O-R-R-U-P-T-I-O-N",
+                "01000101 01010010 01010010 01001111 01010010"
+            ]
+            
+            # 50/50 choice between a reaction or a temporary message
+            if random.choice([True, False]):
+                try:
+                    await message.add_reaction(random.choice(glitch_emojis))
+                except: pass
+            else:
+                await message.channel.send(f"`{random.choice(glitch_text)}`", delete_after=5)
+
     await bot.process_commands(message)
 
 # --- 7. STARTUP ---
