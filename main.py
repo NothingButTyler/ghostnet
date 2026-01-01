@@ -197,9 +197,15 @@ async def on_command_error(ctx, error):
 
 # --- 6. STARTUP ---
 if __name__ == "__main__":
+    print("🛰️ LOGS: Starting Web Server...")
     keep_alive()
+    
     token = os.environ.get("DISCORD_TOKEN")
     if token:
-        bot.run(token)
+        print("🛰️ LOGS: Token found! Attempting to connect to Discord...")
+        try:
+            bot.run(token)
+        except Exception as e:
+            print(f"❌ LOGS: CRITICAL LOGIN ERROR: {e}")
     else:
-        print("❌ LOGS: No DISCORD_TOKEN found!")
+        print("❌ LOGS: No DISCORD_TOKEN found in Environment Variables!")
