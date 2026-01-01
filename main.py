@@ -78,16 +78,12 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.description = "🛡️ **Welcome, Operator.** Accessing classified modules..."
-        
-        # FIXED: Combined all staff tools into fields to ensure they all show up
         embed.add_field(name="💀 PRANK TOOLS", 
                         value="`!hack @user` - Fake breach\n`!ghost-ping @user` - Phantom notification\n`!prank-start` - Activate Overload\n`!prank-stop` - Reset System", 
                         inline=False)
-        
         embed.add_field(name="🛠️ UTILITY & SETUP", 
                         value="`!terminal-clear [amount]` - Wipe messages\n`!welcome-setup` - Start UI Guide\n`!ping` - Latency check", 
                         inline=False)
-        
         return await ctx.send(embed=embed)
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
@@ -107,13 +103,9 @@ async def ghost_ping(ctx, member: discord.Member = None):
     if member is None: return await ctx.send("❌ Error: Tag a target.", delete_after=5)
     
     try:
-        # Maximum stealth: delete your command first
         await ctx.message.delete()
-        # Send ping
         ping_msg = await ctx.send(f"{member.mention}")
-        # Wait just enough for Discord to send the push notification
         await asyncio.sleep(0.7) 
-        # Wipe the evidence
         await ping_msg.delete()
     except Exception as e:
         print(f"Ghost-ping error: {e}")
@@ -123,10 +115,15 @@ async def ghost_ping(ctx, member: discord.Member = None):
 async def terminal_clear(ctx, amount: int = 5):
     if is_treated_as_isaac(ctx): return
     try:
+        # We purge 'amount + 1' to include the command itself if not deleted manually
+        # But since we delete it first, purge handles the rest.
         await ctx.message.delete()
-        await ctx.channel.purge(limit=amount)
-        msg = await ctx.send(f"🧹 `Mainframe cleared. {amount} packets purged.`", delete_after=3)
-    except: pass
+        deleted = await ctx.channel.purge(limit=amount)
+        await ctx.send(f"🧹 `Mainframe cleared. {len(deleted)} packets purged.`", delete_after=3)
+    except discord.Forbidden:
+        await ctx.send("❌ **ERROR:** Missing Permissions.", delete_after=5)
+    except Exception as e:
+        print(f"Clear error: {e}")
 
 @bot.command(name="hack")
 async def hack(ctx, member: discord.Member = None):
@@ -166,7 +163,11 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.author == bot.user: return
+    # Ignore the bot's own messages to prevent infinite loops
+    if message.author == bot.user:
+        return
+
+    # Check for Isaac/Prank logic
     if global_prank and not (message.author.guild_permissions.administrator or discord.utils.get(message.author.roles, name="Hack Ticket")):
         if random.random() < 0.15:
             if random.choice([True, False]):
@@ -174,8 +175,15 @@ async def on_message(message):
                 except: pass
             else:
                 await message.channel.send("`01000101 01010010 01010010 01001111 01010010`", delete_after=3)
+    
+    # This line is CRITICAL - without it, commands won't work because on_message intercepts them
     await bot.process_commands(message)
 
+# --- 7. STARTUP ---
 if __name__ == "__main__":
     keep_alive()
-    bot.run(os.environ.get("DISCORD_TOKEN"))
+    token = os.environ.get("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
+    else:
+        print("❌ LOGS: DISCORD_TOKEN not found!")
