@@ -31,6 +31,7 @@ welcome_settings = {
     "auto_roles": []
 }
 ISAAC_ID = 1444073106384621631
+fake_isaacs = [] # List to store admins testing the prank
 
 # --- 3. UI CLASSES ---
 class WelcomeModal(ui.Modal, title='Set Welcome Message'):
@@ -71,10 +72,21 @@ class RoleSelectView(ui.View):
         welcome_settings["auto_roles"] = [role.id for role in select.values]
         await interaction.response.send_message(f"✅ Auto-roles updated!", ephemeral=True)
 
-# --- 4. COMMANDS (WITH ISAAC LOGIC) ---
+# --- 4. COMMANDS (WITH ISAAC & TEST LOGIC) ---
+
+@bot.command(name="test-prank")
+@commands.has_permissions(administrator=True)
+async def test_prank(ctx):
+    if ctx.author.id in fake_isaacs:
+        fake_isaacs.remove(ctx.author.id)
+        await ctx.send("🔓 **TEST MODE:** You are no longer being treated as Isaac.")
+    else:
+        fake_isaacs.append(ctx.author.id)
+        await ctx.send("🚨 **TEST MODE:** You are now being treated as Isaac for testing purposes.")
+
 @bot.command(name="help")
 async def help_cmd(ctx):
-    if ctx.author.id == ISAAC_ID:
+    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`ERROR`", inline=False)
         embed.set_footer(text="\"Error 404: Code cannot be found.")
@@ -88,7 +100,7 @@ async def help_cmd(ctx):
 
 @bot.command()
 async def ping(ctx):
-    if ctx.author.id == ISAAC_ID:
+    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         await ctx.send("📡 **ERROR:** `PING CANNOT BE CALCULATED`")
     else:
         await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
@@ -96,7 +108,7 @@ async def ping(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def autoroles(ctx):
-    if ctx.author.id == ISAAC_ID:
+    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         await ctx.send("🚫 **CRITICAL:** `Administrative override failed.`")
     else:
         await ctx.send("🔐 **GHOSTNET ROLE CONFIGURATION**", view=RoleSelectView())
@@ -104,7 +116,7 @@ async def autoroles(ctx):
 @bot.command(name="welcome-setup")
 @commands.has_permissions(administrator=True)
 async def welcome_setup_cmd(ctx):
-    if ctx.author.id == ISAAC_ID:
+    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         await ctx.send("🚫 **CRITICAL:** `NO ADMINISTRATOR ACCESS`")
     else:
         await ctx.send("🛠️ **Welcome Configuration**", view=WelcomeSetupView())
@@ -114,7 +126,7 @@ async def hack(ctx, member: discord.Member = None):
     if member is None:
         return await ctx.send("❌ Error: Tag someone to hack.")
     
-    if ctx.author.id == ISAAC_ID:
+    if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         await ctx.send("COMMAND NOT FOUND")
     else:
         msg = await ctx.send(f"💻 `Initializing breach on {member.name}...`")
@@ -138,26 +150,6 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.event
-async def on_member_join(member):
-    if member.id == ISAAC_ID:
-        role = discord.utils.get(member.guild.roles, name="UNDER SURVEILLANCE")
-        if role: await member.add_roles(role)
-    else:
-        for r_id in welcome_settings["auto_roles"]:
-            role = member.guild.get_role(r_id)
-            if role: await member.add_roles(role)
-
-    chan_id = welcome_settings["channel_id"]
-    if chan_id:
-        chan = bot.get_channel(chan_id)
-        if chan:
-            if member.id == ISAAC_ID:
-                await chan.send(f"🚨 **TARGET IDENTIFIED: {member.mention}** 🚨\n```diff\n- [SYSTEM]: Welcome back, Isaac.```")
-            else:
-                msg = welcome_settings["message"].replace("{User_Mention}", member.mention).replace("{Server_Name}", member.guild.name)
-                await chan.send(f"🛰️ {msg}")
-
-@bot.event
 async def on_command_error(ctx, error):
     print(f"❌ LOGS: Error on {ctx.command}: {error}")
     if isinstance(error, commands.MissingPermissions):
@@ -171,4 +163,3 @@ if __name__ == "__main__":
         bot.run(token)
     else:
         print("❌ LOGS: No DISCORD_TOKEN found!")
-        
