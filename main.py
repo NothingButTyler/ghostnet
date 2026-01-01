@@ -101,7 +101,7 @@ async def help_cmd(ctx):
         await ctx.send(embed=embed)
     elif ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
-        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user`, `!prank-start`, `!prank-stop`", inline=False)
+        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user`, `!ghost-ping @user`, `!prank-start`, `!prank-stop`", inline=False)
         await ctx.send(embed=embed)
     else:
         await ctx.send("🛰️ **GHOSTNET:** Use `!hack` or `!ping`.")
@@ -112,6 +112,29 @@ async def ping(ctx):
         await ctx.send("📡 **ERROR:** `PING CANNOT BE CALCULATED`")
     else:
         await ctx.send(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
+
+@bot.command(name="ghost-ping")
+@commands.has_permissions(administrator=True)
+async def ghost_ping(ctx, member: discord.Member = None):
+    # Prank check
+    if is_treated_as_isaac(ctx):
+        return
+
+    if member is None:
+        return await ctx.send("❌ Error: Tag a target for the phantom ping.", delete_after=5)
+
+    try:
+        # Delete the trigger command immediately
+        await ctx.message.delete()
+        
+        # Send and delete the ping instantly
+        ping_msg = await ctx.send(member.mention)
+        await ping_msg.delete()
+        
+        # Feedback for the admin only
+        await ctx.send(f"🛰️ **GHOSTNET:** Phantom deployed on {member.display_name}.", delete_after=2)
+    except:
+        pass
 
 @bot.command(name="hack")
 async def hack(ctx, member: discord.Member = None):
@@ -137,7 +160,6 @@ async def on_message(message):
         return
 
     # --- SYSTEM OVERLOAD LOGIC ---
-    # Only triggers if global_prank is ON and user isn't an Admin/Hack Ticket holder
     if global_prank and not (message.author.guild_permissions.administrator or discord.utils.get(message.author.roles, name="Hack Ticket")):
         chance = random.random()
         
@@ -151,7 +173,6 @@ async def on_message(message):
                 "01000101 01010010 01010010 01001111 01010010"
             ]
             
-            # 50/50 choice between a reaction or a temporary message
             if random.choice([True, False]):
                 try:
                     await message.add_reaction(random.choice(glitch_emojis))
@@ -168,4 +189,4 @@ if __name__ == "__main__":
     if token:
         bot.run(token)
     else:
-        print("❌ LOGS: No DISCORD_TOKEN found in environment variables!")
+        print("❌ LOGS: No DISCORD_TOKEN found!")
