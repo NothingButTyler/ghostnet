@@ -93,27 +93,24 @@ async def test_prank(ctx, member: discord.Member = None):
             except: pass
         await ctx.send(f"🚨 **TEST MODE:** {target.display_name} is now being treated as Isaac for testing purposes.")
 
-
 @bot.command(name="help")
 async def help_cmd(ctx):
-    # --- ISAAC / PRANK VIEW ---
+    # ISAAC / PRANK VIEW
     if ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`ERROR`", inline=False)
         embed.set_footer(text="\"Error 404: Code cannot be found.")
         await ctx.send(embed=embed)
-
-    # --- ADMIN / STAFF VIEW ---
+    # ADMIN VIEW
     elif ctx.author.guild_permissions.administrator:
-        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x00ff00)
+        embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.description = "**Secure Administrative Access Granted.**"
         embed.add_field(name="🛠️ CONFIGURATION", value="`!welcome-setup` - UI Wizard\n`!autoroles` - Role Manager", inline=False)
         embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user` - Simulated Breach\n`!test-prank @user` - Toggle Isaac Logic", inline=False)
         embed.add_field(name="📡 SYSTEM", value="`!ping` - Latency Check", inline=False)
         embed.set_footer(text="🛡️ Admin Interface | Total Control")
         await ctx.send(embed=embed)
-
-    # --- STANDARD MEMBER VIEW ---
+    # MEMBER VIEW
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`Locked` - Admins Only", inline=False)
@@ -171,42 +168,4 @@ async def on_ready():
 async def on_message(message):
     if message.author == bot.user:
         return
-    await bot.process_commands(message)
-
-@bot.event
-async def on_member_join(member):
-    if member.id == ISAAC_ID:
-        role = discord.utils.get(member.guild.roles, name="UNDER SURVEILLANCE")
-        if role: await member.add_roles(role)
-    else:
-        for r_id in welcome_settings["auto_roles"]:
-            role = member.guild.get_role(r_id)
-            if role: await member.add_roles(role)
-
-    chan_id = welcome_settings["channel_id"]
-    if chan_id:
-        chan = bot.get_channel(chan_id)
-        if chan:
-            if member.id == ISAAC_ID:
-                await chan.send(f"🚨 **TARGET IDENTIFIED: {member.mention}** 🚨\n```diff\n- [SYSTEM]: Welcome back, Isaac.```")
-            else:
-                msg = welcome_settings["message"].replace("{User_Mention}", member.mention).replace("{Server_Name}", member.guild.name)
-                await chan.send(f"🛰️ {msg}")
-
-@bot.event
-async def on_command_error(ctx, error):
-    print(f"❌ LOGS: Error on {ctx.command}: {error}")
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send("🚫 **ACCESS DENIED:** You need Administrator permissions to use this.")
-
-# --- 6. STARTUP ---
-if __name__ == "__main__":
-    print("🛰️ LOGS: Starting Web Server...")
-    keep_alive()
-    token = os.environ.get("DISCORD_TOKEN")
-    if token:
-        print("🛰️ LOGS: Token found! Connecting...")
-        try: bot.run(token)
-        except Exception as e: print(f"❌ LOGS: LOGIN ERROR: {e}")
-    else:
-        print("❌ LOGS: No DISCORD_TOKEN found!")
+    # CRITICAL FIX: This allows the bot to process commands after
