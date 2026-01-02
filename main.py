@@ -34,31 +34,55 @@ def is_treated_as_isaac(ctx):
     if global_prank: return True
     return ctx.author.id == ISAAC_ID
 
-# --- 4. COMMANDS (Using True Reply) ---
+# --- 4. COMMANDS ---
 
 @bot.command(name="help")
 async def help_cmd(ctx):
     if is_treated_as_isaac(ctx):
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`ERROR: ENCRYPTION ACTIVE`", inline=False)
-        return await ctx.reply(embed=embed) # Linked Reply
+        return await ctx.reply(embed=embed)
 
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
-        embed.add_field(name="💀 PRANK TOOLS", value="`!hack @user`\n`!ghost-ping @user`\n`!prank-start` / `!prank-stop`", inline=False)
-        embed.add_field(name="🛠️ UTILITY", value="`!terminal-clear [amount]`\n`!ping`", inline=False)
+        embed.add_field(name="💀 PRANK TOOLS", 
+                        value="`!hack @user`\n`!ghost-ping @user`\n`!prank-start` / `!prank-stop`", inline=False)
+        embed.add_field(name="🛠️ UTILITY", 
+                        value="`!terminal-clear [amount]`\n`!scan-network`\n`!ping`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="💀 COMMANDS", value="`!hack @user`\n`!ping`", inline=False)
         await ctx.reply(embed=embed)
 
+@bot.command(name="scan-network")
+async def scan_network(ctx):
+    if is_treated_as_isaac(ctx): return
+    
+    # Aesthetic hacker data
+    vulnerability = random.randint(70, 99) # Higher vulnerability for effect
+    status = "CRITICAL BREACH"
+    
+    # TARGETING LOGIC: Find Isaac in the server
+    isaac_member = ctx.guild.get_member(ISAAC_ID)
+    if isaac_member:
+        threat_display = isaac_member.mention
+    else:
+        # Fallback if he isn't in the server, it still shows his ID
+        threat_display = f"<@{ISAAC_ID}> (External Threat)"
+    
+    embed = discord.Embed(title="🛰️ GHOSTNET NETWORK DIAGNOSTIC", color=0xff0000) # Red for danger
+    embed.description = "```📡 Scanning Server Nodes... [Complete]```"
+    embed.add_field(name="🔒 STATUS", value=f"`{status}`", inline=True)
+    embed.add_field(name="⚠️ VULNERABILITY", value=f"`{vulnerability}%`", inline=True)
+    embed.add_field(name="🚨 PRIMARY THREAT DETECTED", value=threat_display, inline=False)
+    
+    await ctx.reply(content="`[SYSTEM SCAN INITIATED...]`", embed=embed)
+
 @bot.command(name="terminal-clear")
 @commands.has_permissions(manage_messages=True)
 async def terminal_clear(ctx, amount: int = 5):
     if is_treated_as_isaac(ctx): return
-    # NOTE: We CANNOT use ctx.reply here because we are deleting the original message.
-    # We use a mention instead.
     author_mention = ctx.author.mention
     await ctx.message.delete()
     deleted = await ctx.channel.purge(limit=amount)
@@ -70,15 +94,12 @@ async def terminal_clear(ctx, amount: int = 5):
 async def hack(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
     if member is None: return await ctx.reply("❌ Specify a target.")
-    
-    # mention_author=True ensures the reply pings them
-    msg = await ctx.reply(f"💻 `Initializing breach on {member.name}...`", mention_author=True)
+    msg = await ctx.reply(f"💻 `Initializing breach on {member.name}...`")
     await asyncio.sleep(2)
     await msg.edit(content=f"✅ **HACK COMPLETE.** Target indexed.")
 
 @bot.command()
 async def ping(ctx):
-    # This creates the linked reply line
     await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
 @bot.command(name="prank-start")
