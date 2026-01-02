@@ -59,23 +59,33 @@ async def help_cmd(ctx):
 async def scan_network(ctx):
     if is_treated_as_isaac(ctx): return
     
-    # Aesthetic hacker data
-    vulnerability = random.randint(70, 99) # Higher vulnerability for effect
-    status = "CRITICAL BREACH"
+    # Random diagnostic data
+    vulnerability = random.randint(60, 99)
     
-    # TARGETING LOGIC: Find Isaac in the server
+    # SMART TARGETING LOGIC
     isaac_member = ctx.guild.get_member(ISAAC_ID)
-    if isaac_member:
-        threat_display = isaac_member.mention
-    else:
-        # Fallback if he isn't in the server, it still shows his ID
-        threat_display = f"<@{ISAAC_ID}> (External Threat)"
     
-    embed = discord.Embed(title="🛰️ GHOSTNET NETWORK DIAGNOSTIC", color=0xff0000) # Red for danger
+    if isaac_member:
+        # Isaac is here! Target him.
+        threat_label = "🚨 PRIMARY THREAT DETECTED"
+        threat_display = isaac_member.mention
+        status = "CRITICAL BREACH"
+        color = 0xff0000 # Red
+    else:
+        # Isaac is missing. Pick a random "Infiltrator" from the server.
+        threat_label = "🚨 INTERNAL ANOMALY DETECTED"
+        # Filter out bots so it only pings real people
+        potential_targets = [m for m in ctx.guild.members if not m.bot]
+        target = random.choice(potential_targets) if potential_targets else ctx.author
+        threat_display = target.mention
+        status = "UNSTABLE"
+        color = 0xffa500 # Orange
+
+    embed = discord.Embed(title="🛰️ GHOSTNET NETWORK DIAGNOSTIC", color=color)
     embed.description = "```📡 Scanning Server Nodes... [Complete]```"
     embed.add_field(name="🔒 STATUS", value=f"`{status}`", inline=True)
     embed.add_field(name="⚠️ VULNERABILITY", value=f"`{vulnerability}%`", inline=True)
-    embed.add_field(name="🚨 PRIMARY THREAT DETECTED", value=threat_display, inline=False)
+    embed.add_field(name=threat_label, value=threat_display, inline=False)
     
     await ctx.reply(content="`[SYSTEM SCAN INITIATED...]`", embed=embed)
 
