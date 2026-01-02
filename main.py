@@ -47,7 +47,7 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user`\n`!ghost-ping @user`\n`!test-prank @user`\n`!prank-start` / `!prank-stop`", inline=False)
+                        value="`!hack @user`\n`!ghost-ping @user`\n`!test-prank [user]`\n`!prank-start` / `!stop`", inline=False)
         embed.add_field(name="🛠️ UTILITY", 
                         value="`!terminal-clear [amount]`\n`!scan-network`\n`!ping`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
@@ -59,29 +59,35 @@ async def help_cmd(ctx):
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
 async def test_prank(ctx, member: discord.Member = None):
-    if member is None: return await ctx.reply("❌ Specify a user to test on.")
-    if member.id in fake_isaacs:
-        fake_isaacs.remove(member.id)
-        await ctx.reply(f"🔓 **RECOVERY:** {member.name} removed from prank list.")
+    # If no member is tagged, use the person who typed the command
+    target = member if member else ctx.author
+    
+    if target.id in fake_isaacs:
+        fake_isaacs.remove(target.id)
+        await ctx.reply(f"🔓 **RECOVERY:** `{target.name}` cleared from target list.")
     else:
-        fake_isaacs.append(member.id)
-        await ctx.reply(f"☣️ **INFECTED:** {member.name} is now treated as Isaac.")
+        fake_isaacs.append(target.id)
+        await ctx.reply(f"☣️ **INFECTED:** `{target.name}` is now flagged as a threat.")
 
 @bot.command(name="scan-network")
 async def scan_network(ctx):
     if is_treated_as_isaac(ctx): return
     
+    # Check for Isaac and anyone in fake_isaacs
     isaac_member = ctx.guild.get_member(ISAAC_ID)
+    active_test_targets = [m for m in ctx.guild.members if m.id in fake_isaacs]
     
-    # Identify if Isaac or a Test-Target is present
-    test_targets = [m for m in ctx.guild.members if m.id in fake_isaacs]
-    
-    if isaac_member or test_targets:
-        # PROTOCOL: TARGET FOUND (LOUD PING + 100% STATS)
-        target = isaac_member if isaac_member else test_targets[0]
+    # Combine all targets into one list
+    all_threats = []
+    if isaac_member: all_threats.append(isaac_member)
+    all_threats.extend(active_test_targets)
+
+    if all_threats:
+        # PROTOCOL: TARGETS FOUND (LOUD PING + 100% STATS)
         status, vulnerability, color = "UNSTABLE", 100, 0xff0000
-        threat_label, threat_display = "🚨 PRIMARY THREAT DETECTED", target.mention
-        content_msg = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ TARGET: {target.mention}"
+        threat_label = f"🚨 THREATS DETECTED ({len(all_threats)})"
+        threat_display = ", ".join([m.mention for m in all_threats])
+        content_msg = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ ALERT: {threat_display}"
         ping_user = True
     else:
         # PROTOCOL: ANOMALY (SILENT PING + RANDOM STATS)
