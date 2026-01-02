@@ -47,7 +47,7 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user`\n`!ghost-ping @user`\n`!test-prank @user`\n`!prank-start` / `!stop`", inline=False)
+                        value="`!hack @user`\n`!ghost-ping @user`\n`!test-prank @user`\n`!prank-start` / `!prank-stop`", inline=False)
         embed.add_field(name="🛠️ UTILITY", 
                         value="`!terminal-clear [amount]`\n`!scan-network`\n`!ping`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
@@ -59,7 +59,6 @@ async def help_cmd(ctx):
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
 async def test_prank(ctx, member: discord.Member = None):
-    """Restored: Manually adds a user to the prank list."""
     if member is None: return await ctx.reply("❌ Specify a user to test on.")
     if member.id in fake_isaacs:
         fake_isaacs.remove(member.id)
@@ -74,14 +73,18 @@ async def scan_network(ctx):
     
     isaac_member = ctx.guild.get_member(ISAAC_ID)
     
-    if isaac_member:
-        # PROTOCOL: ISAAC (LOUD PING)
+    # Identify if Isaac or a Test-Target is present
+    test_targets = [m for m in ctx.guild.members if m.id in fake_isaacs]
+    
+    if isaac_member or test_targets:
+        # PROTOCOL: TARGET FOUND (LOUD PING + 100% STATS)
+        target = isaac_member if isaac_member else test_targets[0]
         status, vulnerability, color = "UNSTABLE", 100, 0xff0000
-        threat_label, threat_display = "🚨 PRIMARY THREAT DETECTED", isaac_member.mention
-        content_msg = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ TARGET: {isaac_member.mention}"
+        threat_label, threat_display = "🚨 PRIMARY THREAT DETECTED", target.mention
+        content_msg = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ TARGET: {target.mention}"
         ping_user = True
     else:
-        # PROTOCOL: ANOMALY (SILENT PING)
+        # PROTOCOL: ANOMALY (SILENT PING + RANDOM STATS)
         status = random.choice(["VULNERABLE", "BREACHED", "COMPROMISED"])
         vulnerability = random.randint(60, 99)
         threat_label = "🚨 INTERNAL ANOMALY DETECTED"
@@ -89,7 +92,7 @@ async def scan_network(ctx):
         target = random.choice(potential_targets) if potential_targets else ctx.author
         threat_display, color = target.mention, 0xffa500
         content_msg = "`[SYSTEM SCAN INITIATED...]`"
-        ping_user = False # Silent reply
+        ping_user = False 
 
     embed = discord.Embed(title="🛰️ GHOSTNET NETWORK DIAGNOSTIC", color=color)
     embed.description = "```📡 Scanning Server Nodes... [Complete]```"
