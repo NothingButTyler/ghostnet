@@ -59,26 +59,24 @@ async def help_cmd(ctx):
 async def scan_network(ctx):
     if is_treated_as_isaac(ctx): return
     
-    # Random diagnostic data
-    vulnerability = random.randint(60, 99)
-    
-    # SMART TARGETING LOGIC
+    # Check if Isaac is in the server
     isaac_member = ctx.guild.get_member(ISAAC_ID)
     
     if isaac_member:
-        # Isaac is here! Target him.
+        # Isaac is the target: Force specific stats
+        status = "UNSTABLE"
+        vulnerability = 100
         threat_label = "🚨 PRIMARY THREAT DETECTED"
         threat_display = isaac_member.mention
-        status = "CRITICAL BREACH"
         color = 0xff0000 # Red
     else:
-        # Isaac is missing. Pick a random "Infiltrator" from the server.
+        # Isaac is missing: Random Logic
+        status = random.choice(["VULNERABLE", "BREACHED", "COMPROMISED"])
+        vulnerability = random.randint(60, 99)
         threat_label = "🚨 INTERNAL ANOMALY DETECTED"
-        # Filter out bots so it only pings real people
         potential_targets = [m for m in ctx.guild.members if not m.bot]
         target = random.choice(potential_targets) if potential_targets else ctx.author
         threat_display = target.mention
-        status = "UNSTABLE"
         color = 0xffa500 # Orange
 
     embed = discord.Embed(title="🛰️ GHOSTNET NETWORK DIAGNOSTIC", color=color)
