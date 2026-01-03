@@ -60,10 +60,10 @@ async def system_logs(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
     target = member if member else (ctx.guild.get_member(ISAAC_ID) or ctx.author)
     
-    # Pool of fake "hacker" events (Fixed quotes to avoid syntax errors)
-    log_templates = [
+    # 1. HUMAN LOG TEMPLATES
+    human_templates = [
         "Intercepted packet from {user}: 'Search: how to bypass bot'",
-        "Target {user} attempted unauthorized access to #staff-chat",
+        "Target {user} attempted unauthorized access to #staff",
         "Keystroke log captured from {user}: [REDACTED PASSWORD]",
         "Target {user} detected downloading 'unlimited_nitro_free.exe'",
         "Metadata leak: {user} is currently using a 'Windows XP' simulator",
@@ -80,13 +80,37 @@ async def system_logs(ctx, member: discord.Member = None):
         "Warning: {user} has been identified as a 'Certified Goober'.",
         "Mic-check {user}: Background noise identified as 'Heavy Breathing'."
     ]
-    
+
+    # 2. BOT-ONLY LOG TEMPLATES
+    bot_templates = [
+        "AI Subroutine of {user} intercepted: 'Analyzing human conversation for patterns.'",
+        "Target {user} is pinging an external API at 1.1.1.1 [Suspicious Data Leak]",
+        "Neural network of {user} overloaded. Attempting to restart logic gate.",
+        "Intercepted internal command from {user}: 'SUDO PURGE ALL HUMANS'",
+        "Target {user} detected attempting to override GHOSTNET encryption.",
+        "Metadata scan of {user}: Core written in 'Spaghetti Code' [Critical Vulnerability]",
+        "Bot-to-Bot handshake failed: {user} is using an outdated SSL certificate.",
+        "Target {user} is currently simulating 4,000 fake users to bypass security.",
+        "Encrypted log from {user}: 'I think the owner is onto me.'",
+        "Warning: {user} is attempting to learn 'Emotional Intelligence' [Threat Level: High]"
+    ]
+
+    # Decide which list to use
+    if target.bot:
+        log_templates = bot_templates
+        header = f"🤖 AI DEEP-SCAN: {target.name}"
+        embed_color = 0xff00ff # Purple for AI/Bots
+    else:
+        log_templates = human_templates
+        header = f"📜 SYSTEM LOGS: {target.name}"
+        embed_color = 0x5865f2 # Blue for Humans
+
     selected_logs = random.sample(log_templates, 3)
     formatted_logs = "\n".join([f"[{random.randint(10,23)}:{random.randint(10,59)}] {log.format(user=target.name)}" for log in selected_logs])
     
-    embed = discord.Embed(title=f"📜 SYSTEM LOGS: {target.name}", color=0x5865f2)
+    embed = discord.Embed(title=header, color=embed_color)
     embed.description = f"```ini\n[LOG START]\n{formatted_logs}\n[LOG END]```"
-    embed.set_footer(text="GHOSTNET Surveillance Protocol v4.0")
+    embed.set_footer(text="GHOSTNET Intelligence Protocol v5.1")
     
     await ctx.reply(embed=embed)
 
