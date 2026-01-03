@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord import ui
 import os
 import asyncio
 import random
@@ -47,7 +46,7 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user`\n`!ghost-ping @user`\n`!test-prank [user]`\n`!prank-start` / `!stop`", inline=False)
+                        value="`!hack @user`\n`!test-prank [user]`\n`!system-logs @user`\n`!prank-start` / `!stop`", inline=False)
         embed.add_field(name="🛠️ UTILITY", 
                         value="`!terminal-clear [amount]`\n`!scan-network`\n`!ping`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
@@ -56,100 +55,89 @@ async def help_cmd(ctx):
         embed.add_field(name="💀 COMMANDS", value="`!hack @user`\n`!ping`", inline=False)
         await ctx.reply(embed=embed)
 
+@bot.command(name="system-logs")
+async def system_logs(ctx, member: discord.Member = None):
+    if is_treated_as_isaac(ctx): return
+    target = member if member else (ctx.guild.get_member(ISAAC_ID) or ctx.author)
+    
+    # Pool of fake "hacker" events
+    log_templates = [
+        "Intercepted packet from {user}: 'Search: how to bypass bot'",
+        "Target {user} attempted unauthorized access to #staff-chat",
+        "Keystroke log captured from {user}: [REDACTED PASSWORD]",
+        "Target {user} detected downloading 'unlimited_nitro_free.exe'",
+        "Metadata leak: {user} is currently using a 'Windows XP' simulator",
+        "Connection from {user} flagged for 'Excessive Skill Issue'",
+        "Encrypted DM intercepted from {user}: 'Is the bot watching me?'",
+        "{user} attempted to bypass firewall using "admin123".",
+        "{User} searched for "how to talk to girls" in #general.",
+        "Intercepting private packet: "I love this bot" - Sent by {user}.",
+        "Unauthorized handshake detected from {user} via Port 8080.",
+        "Local files of {user} accessed: found folder 'Top Secret (Not a virus)'.",
+        
+    ]
+    
+    selected_logs = random.sample(log_templates, 3)
+    formatted_logs = "\n".join([f"[{random.randint(10,23)}:{random.randint(10,59)}] {log.format(user=target.name)}" for log in selected_logs])
+    
+    embed = discord.Embed(title=f"📜 SYSTEM LOGS: {target.name}", color=0x5865f2)
+    embed.description = f"```ini\n[LOG START]\n{formatted_logs}\n[LOG END]```"
+    embed.set_footer(text="GHOSTNET Surveillance Protocol v4.0")
+    
+    await ctx.reply(embed=embed)
+
 @bot.command(name="test-prank")
 @commands.has_permissions(administrator=True)
 async def test_prank(ctx, member: discord.Member = None):
-    # If no member is tagged, use the person who typed the command
     target = member if member else ctx.author
-    
     if target.id in fake_isaacs:
         fake_isaacs.remove(target.id)
-        await ctx.reply(f"🔓 **RECOVERY:** `{target.name}` cleared from target list.")
+        await ctx.reply(f"🔓 **RECOVERY:** `{target.name}` cleared.")
     else:
         fake_isaacs.append(target.id)
-        await ctx.reply(f"☣️ **INFECTED:** `{target.name}` is now flagged as a threat.")
+        await ctx.reply(f"☣️ **INFECTED:** `{target.name}` flagged.")
 
 @bot.command(name="scan-network")
 async def scan_network(ctx):
     if is_treated_as_isaac(ctx): return
-    
-    # Check for Isaac and anyone in fake_isaacs
     isaac_member = ctx.guild.get_member(ISAAC_ID)
     active_test_targets = [m for m in ctx.guild.members if m.id in fake_isaacs]
-    
-    # Combine all targets into one list
-    all_threats = []
-    if isaac_member: all_threats.append(isaac_member)
-    all_threats.extend(active_test_targets)
+    all_threats = ([isaac_member] if isaac_member else []) + active_test_targets
 
     if all_threats:
-        # PROTOCOL: TARGETS FOUND (LOUD PING + 100% STATS)
         status, vulnerability, color = "UNSTABLE", 100, 0xff0000
         threat_label = f"🚨 THREATS DETECTED ({len(all_threats)})"
         threat_display = ", ".join([m.mention for m in all_threats])
         content_msg = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ ALERT: {threat_display}"
         ping_user = True
     else:
-        # PROTOCOL: ANOMALY (SILENT PING + RANDOM STATS)
-        status = random.choice(["VULNERABLE", "BREACHED", "COMPROMISED"])
-        vulnerability = random.randint(60, 99)
-        threat_label = "🚨 INTERNAL ANOMALY DETECTED"
-        potential_targets = [m for m in ctx.guild.members if not m.bot]
-        target = random.choice(potential_targets) if potential_targets else ctx.author
-        threat_display, color = target.mention, 0xffa500
-        content_msg = "`[SYSTEM SCAN INITIATED...]`"
-        ping_user = False 
+        status, vulnerability, color = "STABLE", random.randint(5, 40), 0x00ff00
+        threat_label, threat_display = "🚨 ANOMALY", "NONE"
+        content_msg, ping_user = "`[SYSTEM SCAN INITIATED...]`", False
 
-    embed = discord.Embed(title="🛰️ GHOSTNET NETWORK DIAGNOSTIC", color=color)
-    embed.description = "```📡 Scanning Server Nodes... [Complete]```"
+    embed = discord.Embed(title="🛰️ GHOSTNET DIAGNOSTIC", color=color)
     embed.add_field(name="🔒 STATUS", value=f"`{status}`", inline=True)
     embed.add_field(name="⚠️ VULNERABILITY", value=f"`{vulnerability}%`", inline=True)
     embed.add_field(name=threat_label, value=threat_display, inline=False)
-    
     await ctx.reply(content=content_msg, embed=embed, mention_author=ping_user)
 
 @bot.command(name="terminal-clear")
 @commands.has_permissions(manage_messages=True)
 async def terminal_clear(ctx, amount: int = 5):
     if is_treated_as_isaac(ctx): return
-    author_mention = ctx.author.mention
+    mention = ctx.author.mention
     await ctx.message.delete()
     deleted = await ctx.channel.purge(limit=amount)
-    msg = await ctx.send(f"🧹 {author_mention} `Mainframe purged: {len(deleted)} packets.`")
+    msg = await ctx.send(f"🧹 {mention} `Purged: {len(deleted)} packets.`")
     await asyncio.sleep(3)
     await msg.delete()
 
-@bot.command(name="hack")
-async def hack(ctx, member: discord.Member = None):
-    if is_treated_as_isaac(ctx): return
-    if member is None: return await ctx.reply("❌ Specify a target.")
-    msg = await ctx.reply(f"💻 `Initializing breach on {member.name}...`")
-    await asyncio.sleep(2)
-    await msg.edit(content=f"✅ **HACK COMPLETE.** Target indexed.")
-
 @bot.command()
 async def ping(ctx):
+    if is_treated_as_isaac(ctx): return await ctx.reply("`ERR_TIMEOUT`")
     await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
-@bot.command(name="prank-start")
-@commands.has_permissions(administrator=True)
-async def prank_start(ctx):
-    global global_prank
-    global_prank = True
-    await ctx.reply("🚨 **GLOBAL PROTOCOL 404: ACTIVE**")
-
-@bot.command(name="prank-stop")
-@commands.has_permissions(administrator=True)
-async def prank_stop(ctx):
-    global global_prank
-    global_prank = False
-    await ctx.reply("🔓 **SYSTEM RECOVERY: SUCCESSFUL**")
-
 # --- 5. EVENTS ---
-@bot.event
-async def on_ready():
-    print(f"✅ GHOSTNET Online: {bot.user.name}")
-
 @bot.event
 async def on_message(message):
     if message.author == bot.user: return
