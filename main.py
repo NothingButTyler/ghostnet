@@ -60,7 +60,7 @@ async def system_logs(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
     target = member if member else (ctx.guild.get_member(ISAAC_ID) or ctx.author)
     
-    # Pool of fake "hacker" events
+    # Pool of fake "hacker" events (Fixed quotes to avoid syntax errors)
     log_templates = [
         "Intercepted packet from {user}: 'Search: how to bypass bot'",
         "Target {user} attempted unauthorized access to #staff-chat",
@@ -69,12 +69,16 @@ async def system_logs(ctx, member: discord.Member = None):
         "Metadata leak: {user} is currently using a 'Windows XP' simulator",
         "Connection from {user} flagged for 'Excessive Skill Issue'",
         "Encrypted DM intercepted from {user}: 'Is the bot watching me?'",
-        "{user} attempted to bypass firewall using "admin123".",
-        "{User} searched for "how to talk to girls" in #general.",
-        "Intercepting private packet: "I love this bot" - Sent by {user}.",
+        "{user} attempted to bypass firewall using 'admin123'.",
+        "{user} searched for 'how to talk to girls' in #general.",
+        "Intercepting private packet: 'I love this bot' - Sent by {user}.",
         "Unauthorized handshake detected from {user} via Port 8080.",
         "Local files of {user} accessed: found folder 'Top Secret (Not a virus)'.",
-        
+        "Target {user} attempting to 'Inspect Element' on a physical monitor.",
+        "Signal intercept: {user} is typing... then deleting... then typing again.",
+        "Trace route complete: {user} is located in a 'Cardboard Box'.",
+        "Warning: {user} has been identified as a 'Certified Goober'.",
+        "Mic-check {user}: Background noise identified as 'Heavy Breathing'."
     ]
     
     selected_logs = random.sample(log_templates, 3)
