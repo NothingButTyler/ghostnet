@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 import asyncio
 import random
+import time
 from flask import Flask
 from threading import Thread
 
@@ -26,13 +27,21 @@ bot.remove_command('help')
 
 ISAAC_ID = 1444073106384621631
 fake_isaacs = [] 
+infected_users = {} # Stores {user_id: expiry_timestamp}
 global_prank = False 
 
 # --- 3. HELPER LOGIC ---
-def is_treated_as_isaac(ctx):
-    if ctx.author.guild_permissions.administrator: return False
+def is_treated_as_isaac(ctx_or_msg):
+    # Check if input is Context or Message
+    author = ctx_or_msg.author if hasattr(ctx_or_msg, 'author') else ctx_or_msg.author
+    
+    if author.guild_permissions.administrator: return False
     if global_prank: return True
-    return ctx.author.id == ISAAC_ID or ctx.author.id in fake_isaacs
+    
+    # Check for active infection
+    is_infected = author.id in infected_users and time.time() < infected_users[author.id]
+    
+    return author.id == ISAAC_ID or author.id in fake_isaacs or is_infected
 
 # --- 4. COMMANDS ---
 
@@ -40,53 +49,56 @@ def is_treated_as_isaac(ctx):
 async def help_cmd(ctx):
     if is_treated_as_isaac(ctx):
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="🛠️ CONFIG", value="`ERROR: ENCRYPTION ACTIVE`", inline=False)
+        embed.add_field(name="🛠️ CONFIG", value="`ERROR: NEURAL LINK CORRUPTED`", inline=False)
         return await ctx.reply(embed=embed)
 
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user` - Fake breach\n`!test-prank [user]` - Toggle Isaac status\n`!system-logs @user` - Surveillance logs", inline=False)
+                        value="`!hack @user`\n`!test-prank [user]`\n`!infect @user` - 5min Biohazard", inline=False)
         embed.add_field(name="🛡️ SECURITY", 
-                        value="`!lockdown` - Silence channel (30s)\n`!scan-network` - Threat diagnostic", inline=False)
+                        value="`!lockdown` - Silence channel\n`!scan-network`\n`!system-logs @user`", inline=False)
         embed.add_field(name="🛠️ UTILITY", 
-                        value="`!terminal-clear [num]` - Purge chat\n`!ping` - Latency check", inline=False)
+                        value="`!terminal-clear [num]`\n`!ping`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="💀 COMMANDS", value="`!hack @user`\n`!ping`", inline=False)
         await ctx.reply(embed=embed)
 
+@bot.command(name="infect")
+@commands.has_permissions(administrator=True)
+async def infect(ctx, member: discord.Member = None):
+    if is_treated_as_isaac(ctx): return
+    if not member: return await ctx.reply("❌ Specify a host to infect.")
+    
+    # Set infection for 5 minutes (300 seconds)
+    infected_users[member.id] = time.time() + 300
+    
+    embed = discord.Embed(title="☣️ INFECTION SUCCESSFUL", color=0x7800ff)
+    embed.description = f"User {member.mention} has been injected with **GHOST-WARE v2.1**.\nAll outgoing packets will be flagged."
+    await ctx.send(embed=embed)
+
 @bot.command(name="lockdown")
 @commands.has_permissions(administrator=True)
 async def lockdown(ctx):
     if is_treated_as_isaac(ctx): return
-    
-    # 1. Start Countdown
     msg = await ctx.send("`[!] WARNING: UNAUTHORIZED PACKET OVERLOAD DETECTED`")
     await asyncio.sleep(1.5)
-    
     for i in range(3, 0, -1):
         await msg.edit(content=f"⚠️ **GHOSTNET LOCKDOWN INITIATED: {i}...**")
         await asyncio.sleep(1)
     
-    # 2. Silence the Channel
-    # This prevents the @everyone role from sending messages
     await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
-    
     embed = discord.Embed(
         title="🛑 CHANNEL SECURED", 
-        description="```diff\n- FIREWALL: ACTIVE\n- ENCRYPTION: 4096-BIT\n- INBOUND TRAFFIC: BLOCKED\n```",
+        description="```diff\n- FIREWALL: ACTIVE\n- ENCRYPTION: 4096-BIT\n```",
         color=0xff0000
     )
     embed.add_field(name="STATUS", value="`NETWORK ISOLATION COMPLETE (30S)`")
-    embed.set_footer(text="GHOSTNET Security Layer v9.0")
     await msg.edit(content="🚨 **TERMINAL SECURED.**", embed=embed)
 
-    # 3. Wait 30 seconds
     await asyncio.sleep(30)
-
-    # 4. Restore Permissions
     await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=None)
     await ctx.send("🔓 **LOCKDOWN LIFTED.** Traffic resuming...")
 
@@ -95,30 +107,17 @@ async def system_logs(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
     target = member if member else (ctx.guild.get_member(ISAAC_ID) or ctx.author)
     
-    human_templates = [
-        "Intercepted packet from {user}: 'Search: how to bypass bot'",
-        "Target {user} attempted unauthorized access to #staff-chat",
-        "Keystroke log captured from {user}: [REDACTED PASSWORD]",
-        "{user} searched for 'how to talk to girls' in #general.",
-        "Trace route complete: {user} is located in a 'Cardboard Box'."
-    ]
-    
-    bot_templates = [
-        "AI Subroutine of {user} intercepted: 'Analyzing patterns.'",
-        "Intercepted internal command from {user}: 'SUDO PURGE ALL HUMANS'",
-        "Metadata scan of {user}: Core written in 'Spaghetti Code'."
-    ]
+    human_templates = ["Packet sniffed from {user}", "Trace complete on {user}"]
+    bot_templates = ["AI Subroutine intercepted from {user}", "SUDO PURGE detected"]
 
-    if target.bot:
-        log_templates, header, color = bot_templates, f"🤖 AI DEEP-SCAN: {target.name}", 0xff00ff
-    else:
-        log_templates, header, color = human_templates, f"📜 SYSTEM LOGS: {target.name}", 0x5865f2
+    log_templates = bot_templates if target.bot else human_templates
+    header = f"🤖 AI DEEP-SCAN: {target.name}" if target.bot else f"📜 SYSTEM LOGS: {target.name}"
+    color = 0xff00ff if target.bot else 0x5865f2
 
-    selected_logs = random.sample(log_templates, min(len(log_templates), 3))
-    formatted_logs = "\n".join([f"[{random.randint(10,23)}:{random.randint(10,59)}] {log.format(user=target.name)}" for log in selected_logs])
+    formatted_logs = f"[{random.randint(10,23)}:00] {random.choice(log_templates).format(user=target.name)}"
     
     embed = discord.Embed(title=header, color=color)
-    embed.description = f"```ini\n[LOG START]\n{formatted_logs}\n[LOG END]```"
+    embed.description = f"```ini\n{formatted_logs}```"
     await ctx.reply(embed=embed)
 
 @bot.command(name="test-prank")
@@ -140,39 +139,37 @@ async def scan_network(ctx):
     all_threats = ([isaac_member] if isaac_member else []) + active_test_targets
 
     if all_threats:
-        status, vulnerability, color = "UNSTABLE", 100, 0xff0000
-        threat_label, threat_display = f"🚨 THREATS DETECTED ({len(all_threats)})", ", ".join([m.mention for m in all_threats])
-        content_msg, ping_user = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ ALERT: {threat_display}", True
+        status, color = "UNSTABLE", 0xff0000
+        threat_display = ", ".join([m.mention for m in all_threats])
+        content_msg = f"`[SYSTEM SCAN...]` - ⚠️ ALERT: {threat_display}"
     else:
-        status, vulnerability, color = "STABLE", random.randint(5, 40), 0x00ff00
-        threat_label, threat_display = "🚨 ANOMALY", "NONE"
-        content_msg, ping_user = "`[SYSTEM SCAN INITIATED...]`", False
+        status, color = "STABLE", 0x00ff00
+        threat_display = "NONE"
+        content_msg = "`[SYSTEM SCAN...]`"
 
     embed = discord.Embed(title="🛰️ GHOSTNET DIAGNOSTIC", color=color)
     embed.add_field(name="🔒 STATUS", value=f"`{status}`", inline=True)
-    embed.add_field(name="⚠️ VULNERABILITY", value=f"`{vulnerability}%`", inline=True)
-    embed.add_field(name=threat_label, value=threat_display, inline=False)
-    await ctx.reply(content=content_msg, embed=embed, mention_author=ping_user)
-
-@bot.command(name="terminal-clear")
-@commands.has_permissions(manage_messages=True)
-async def terminal_clear(ctx, amount: int = 5):
-    if is_treated_as_isaac(ctx): return
-    mention = ctx.author.mention
-    await ctx.message.delete()
-    deleted = await ctx.channel.purge(limit=amount)
-    msg = await ctx.send(f"🧹 {mention} `Purged: {len(deleted)} packets.`")
-    await asyncio.sleep(3)
-    await msg.delete()
+    embed.add_field(name="🚨 THREATS", value=threat_display, inline=False)
+    await ctx.reply(content=content_msg, embed=embed)
 
 @bot.command()
 async def ping(ctx):
     if is_treated_as_isaac(ctx): return await ctx.reply("`ERR_TIMEOUT`")
     await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
+# --- 5. EVENTS ---
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user: return
+
+    # Infection Logic: Auto-react with Biohazard
+    if message.author.id in infected_users:
+        if time.time() < infected_users[message.author.id]:
+            await message.add_reaction("☣️")
+        else:
+            del infected_users[message.author.id]
+
     await bot.process_commands(message)
 
 if __name__ == "__main__":
