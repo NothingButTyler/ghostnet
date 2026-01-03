@@ -8,7 +8,6 @@ from flask import Flask
 from threading import Thread
 
 # --- 1. WEB SERVER (Anti-Idle) ---
-# This keeps the bot alive on 24/7 hosting platforms like Replit
 app = Flask('')
 @app.route('/')
 def home(): return "GHOSTNET: ONLINE"
@@ -22,36 +21,65 @@ def keep_alive():
     t.start()
 
 # --- 2. BOT SETUP ---
-intents = discord.Intents.all() # Granting all permissions for reaction and member tracking
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
-bot.remove_command('help') # Removing default help to use our custom Terminal UI
+bot.remove_command('help')
 
-# Database-lite: Storing target IDs and infection status in memory
+# Configuration for targets
 ISAAC_ID = 1444073106384621631
 fake_isaacs = [] 
-infected_users = {} # Format: {user_id: expiry_timestamp}
+infected_users = {} 
 global_prank = False 
 
 # --- 3. HELPER LOGIC ---
 def is_treated_as_isaac(ctx_or_msg):
-    """
-    Core logic to determine if a user should be blocked/pranked.
-    Staff (Administrators) are always immune.
-    """
+    """Checks if the user is a target (Isaac, Infected, or Fake). Admins are immune."""
     author = ctx_or_msg.author
     if author.guild_permissions.administrator: return False
     if global_prank: return True
-    
-    # Check if user is currently infected by !infect
     is_infected = author.id in infected_users and time.time() < infected_users[author.id]
-    
     return author.id == ISAAC_ID or author.id in fake_isaacs or is_infected
 
 # --- 4. COMMANDS ---
 
+@bot.command(name="hack")
+async def hack(ctx, member: discord.Member = None):
+    """Restored Hack Command: Simulates a terminal breach on a target."""
+    # If the target (Isaac) tries to hack someone, the bot blocks them
+    if is_treated_as_isaac(ctx):
+        return await ctx.reply("`[ERROR]: UNAUTHORIZED ACCESS. TERMINAL LOCKED.`")
+
+    # Default to hacking the author if no member is mentioned
+    target = member if member else ctx.author
+    
+    # 1. Start the simulation
+    msg = await ctx.send(f"🛰️ `[CONNECTING TO {target.name.upper()}...]`")
+    await asyncio.sleep(1.5)
+
+    # 2. Visual "Step-by-Step" Hacking Progress
+    steps = [
+        "🔓 Bypassing 2FA...",
+        "💾 Downloading local data...",
+        "📂 Indexing #private-chats...",
+        "🛰️ Mirroring screen packets...",
+        "☣️ Injecting Ghost-Ware..."
+    ]
+
+    for step in steps:
+        await msg.edit(content=f"⚙️ `{step}`")
+        await asyncio.sleep(random.uniform(0.5, 1.5)) # Random delay for realism
+
+    # 3. Final Result Embed
+    embed = discord.Embed(title="✅ BREACH SUCCESSFUL", color=0x00ff00)
+    embed.description = f"```diff\n+ Target: {target.name}\n+ IP: {random.randint(100,255)}.{random.randint(0,255)}.1.1\n+ Status: CONTROLLED\n```"
+    embed.add_field(name="🛰️ TERMINAL", value=f"Access granted to {target.mention}'s logs.")
+    embed.set_footer(text="GHOSTNET Intelligence Protocol v5.1")
+    
+    await msg.edit(content=None, embed=embed)
+
 @bot.command(name="help")
 async def help_cmd(ctx):
-    """Custom help menu that changes based on user permissions."""
+    """Custom Terminal UI for Help."""
     if is_treated_as_isaac(ctx):
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="🛠️ CONFIG", value="`ERROR: NEURAL LINK CORRUPTED`", inline=False)
@@ -59,111 +87,54 @@ async def help_cmd(ctx):
 
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
-        embed.add_field(name="☣️ BIOWARE", 
-                        value="`!infect @user`\n`!cure @user`", inline=False)
+        embed.add_field(name="💀 BREACH TOOLS", 
+                        value="`!hack @user` - Simulate breach\n`!infect @user` - 5min haunt", inline=False)
         embed.add_field(name="🛡️ SECURITY", 
-                        value="`!lockdown`\n`!unlock`\n`!system-logs @user`", inline=False)
-        embed.add_field(name="🛠️ UTILITY", 
-                        value="`!terminal-clear [num]`\n`!ping`\n`!shutdown` - Kill bot process", inline=False)
+                        value="`!lockdown` - Silence chat\n`!unlock` - Restore traffic", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
     else:
+        # Standard Public Help
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="💀 COMMANDS", value="`!hack @user`\n`!ping`", inline=False)
+        embed.add_field(name="💀 COMMANDS", value="`!hack @user` - Attempt breach", inline=False)
         await ctx.reply(embed=embed)
+
+# --- 5. SYSTEM COMMANDS (Admin Only) ---
 
 @bot.command(name="shutdown")
 @commands.has_permissions(administrator=True)
 async def shutdown(ctx):
-    """Safe logout to prevent 'Zombie' bot instances."""
-    await ctx.reply("🛑 **SHUTTING DOWN GHOSTNET...** (Closing terminal session)")
+    """Terminates the bot process."""
+    await ctx.reply("🛑 **OFFLINE.**")
     await bot.close()
 
 @bot.command(name="infect")
 @commands.has_permissions(administrator=True)
 async def infect(ctx, member: discord.Member = None):
-    """Infects a user, causing the bot to react to all their messages for 5 mins."""
-    if is_treated_as_isaac(ctx): return
-    if not member: return await ctx.reply("❌ Specify a host to infect.")
-    
-    infected_users[member.id] = time.time() + 300 # Current time + 300 seconds
-    await ctx.send(f"☣️ **{member.mention} has been infected.**")
+    """Starts the 5-minute reaction haunt on a user."""
+    if not member: return await ctx.reply("❌ Specify target.")
+    infected_users[member.id] = time.time() + 300
+    await ctx.send(f"☣️ **{member.mention} flagged for monitoring.**")
 
-@bot.command(name="cure")
-@commands.has_permissions(administrator=True)
-async def cure(ctx, member: discord.Member = None):
-    """Removes the infection status and restores normal bot interaction."""
-    if is_treated_as_isaac(ctx): return
-    if member and member.id in infected_users:
-        del infected_users[member.id]
-        await ctx.send(f"💊 **Infection cleared for {member.mention}.**")
-        try: await member.send("🛰️ **GHOSTNET:** Connection stabilized.")
-        except: pass
-
-@bot.command(name="lockdown")
-@commands.has_permissions(administrator=True)
-async def lockdown(ctx):
-    """Mutes the channel for @everyone for 30 seconds."""
-    if is_treated_as_isaac(ctx): return
-    msg = await ctx.send("`[!] WARNING: PACKET OVERLOAD`")
-    await asyncio.sleep(1)
-    
-    # Overriding channel permissions
-    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
-    await msg.edit(content="🚨 **LOCKDOWN ACTIVE.**")
-    
-    await asyncio.sleep(30)
-    
-    # Restoring channel permissions
-    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=None)
-    await ctx.send("🔓 **LOCKDOWN LIFTED.**")
-
-@bot.command(name="unlock")
-@commands.has_permissions(administrator=True)
-async def unlock(ctx):
-    """Manual override to open a channel locked by !lockdown."""
-    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=None)
-    await ctx.send("🔓 **MANUAL OVERRIDE SUCCESSFUL.**")
-
-@bot.command(name="system-logs")
-async def system_logs(ctx, member: discord.Member = None):
-    """Generates fake surveillance logs for humans or bots."""
-    if is_treated_as_isaac(ctx): return
-    target = member if member else (ctx.guild.get_member(ISAAC_ID) or ctx.author)
-    
-    # Visual flair based on target type
-    log_type = "🤖 AI DEEP-SCAN" if target.bot else "📜 SYSTEM LOGS"
-    log_entry = f"[{random.randint(10,23)}:00] Data intercept on {target.name}: [OK]"
-    
-    embed = discord.Embed(title=log_type, description=f"```ini\n{log_entry}```", color=0x5865f2)
-    await ctx.reply(embed=embed)
-
-@bot.command()
-async def ping(ctx):
-    """Simple latency check. Blocks Isaac with a timeout error."""
-    if is_treated_as_isaac(ctx): return await ctx.reply("`ERR_TIMEOUT`")
-    await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
-
-# --- 5. EVENTS ---
+# --- 6. EVENTS ---
 
 @bot.event
 async def on_message(message):
-    # CRITICAL: Prevent the bot from responding to itself (stops infinite loops)
+    # Prevention: Don't respond to own messages
     if message.author == bot.user:
         return
 
-    # Infection Logic: If user is in the infection list, add the emoji
+    # Infection Logic: Auto-react to every message sent by infected targets
     if message.author.id in infected_users:
         if time.time() < infected_users[message.author.id]:
             try: await message.add_reaction("☣️")
-            except: pass # Prevents crash if bot lacks permission to react
+            except: pass
         else:
-            # Infection has expired, remove them from the list
             del infected_users[message.author.id]
 
-    # Required to make @bot.command() functions work alongside on_message
+    # Required for commands to process
     await bot.process_commands(message)
 
-# --- 6. EXECUTION ---
+# --- 7. RUN ---
 if __name__ == "__main__":
-    keep_alive() # Starts Flask server
+    keep_alive()
     bot.run(os.environ.get("DISCORD_TOKEN"))
