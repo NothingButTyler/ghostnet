@@ -36,6 +36,30 @@ def is_treated_as_isaac(ctx):
 
 # --- 4. COMMANDS ---
 
+@bot.command(name="lockdown")
+@commands.has_permissions(administrator=True)
+async def lockdown(ctx):
+    if is_treated_as_isaac(ctx): return
+    
+    # Visual Countdown
+    msg = await ctx.send("`[!] WARNING: UNAUTHORIZED PACKET OVERLOAD DETECTED`")
+    await asyncio.sleep(1.5)
+    
+    for i in range(3, 0, -1):
+        await msg.edit(content=f"⚠️ **GHOSTNET LOCKDOWN INITIATED: {i}...**")
+        await asyncio.sleep(1)
+    
+    # The Finale
+    embed = discord.Embed(
+        title="🛑 CHANNEL SECURED", 
+        description="```diff\n- FIREWALL: ACTIVE\n- ENCRYPTION: 4096-BIT\n- INBOUND TRAFFIC: BLOCKED\n```",
+        color=0xff0000
+    )
+    embed.add_field(name="STATUS", value="`NETWORK ISOLATION COMPLETE`")
+    embed.set_footer(text="GHOSTNET Security Layer v9.0")
+    
+    await msg.edit(content="🚨 **TERMINAL SECURED.**", embed=embed)
+
 @bot.command(name="help")
 async def help_cmd(ctx):
     if is_treated_as_isaac(ctx):
@@ -46,7 +70,7 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user`\n`!test-prank [user]`\n`!system-logs @user`\n`!prank-start` / `!stop`", inline=False)
+                        value="`!hack @user`\n`!test-prank [user]`\n`!system-logs @user`\n`!lockdown`", inline=False)
         embed.add_field(name="🛠️ UTILITY", 
                         value="`!terminal-clear [amount]`\n`!scan-network`\n`!ping`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
@@ -60,58 +84,30 @@ async def system_logs(ctx, member: discord.Member = None):
     if is_treated_as_isaac(ctx): return
     target = member if member else (ctx.guild.get_member(ISAAC_ID) or ctx.author)
     
-    # 1. HUMAN LOG TEMPLATES
     human_templates = [
         "Intercepted packet from {user}: 'Search: how to bypass bot'",
-        "Target {user} attempted unauthorized access to #staff",
+        "Target {user} attempted unauthorized access to #staff-chat",
         "Keystroke log captured from {user}: [REDACTED PASSWORD]",
-        "Target {user} detected downloading 'unlimited_nitro_free.exe'",
-        "Metadata leak: {user} is currently using a 'Windows XP' simulator",
-        "Connection from {user} flagged for 'Excessive Skill Issue'",
-        "Encrypted DM intercepted from {user}: 'Is the bot watching me?'",
-        "{user} attempted to bypass firewall using 'admin123'.",
         "{user} searched for 'how to talk to girls' in #general.",
-        "Intercepting private packet: 'I love this bot' - Sent by {user}.",
-        "Unauthorized handshake detected from {user} via Port 8080.",
-        "Local files of {user} accessed: found folder 'Top Secret (Not a virus)'.",
-        "Target {user} attempting to 'Inspect Element' on a physical monitor.",
-        "Signal intercept: {user} is typing... then deleting... then typing again.",
-        "Trace route complete: {user} is located in a 'Cardboard Box'.",
-        "Warning: {user} has been identified as a 'Certified Goober'.",
-        "Mic-check {user}: Background noise identified as 'Heavy Breathing'."
+        "Trace route complete: {user} is located in a 'Cardboard Box'."
     ]
-
-    # 2. BOT-ONLY LOG TEMPLATES
+    
     bot_templates = [
-        "AI Subroutine of {user} intercepted: 'Analyzing human conversation for patterns.'",
-        "Target {user} is pinging an external API at 1.1.1.1 [Suspicious Data Leak]",
-        "Neural network of {user} overloaded. Attempting to restart logic gate.",
+        "AI Subroutine of {user} intercepted: 'Analyzing patterns.'",
         "Intercepted internal command from {user}: 'SUDO PURGE ALL HUMANS'",
-        "Target {user} detected attempting to override GHOSTNET encryption.",
-        "Metadata scan of {user}: Core written in 'Spaghetti Code' [Critical Vulnerability]",
-        "Bot-to-Bot handshake failed: {user} is using an outdated SSL certificate.",
-        "Target {user} is currently simulating 4,000 fake users to bypass security.",
-        "Encrypted log from {user}: 'I think the owner is onto me.'",
-        "Warning: {user} is attempting to learn 'Emotional Intelligence' [Threat Level: High]"
+        "Metadata scan of {user}: Core written in 'Spaghetti Code'."
     ]
 
-    # Decide which list to use
     if target.bot:
-        log_templates = bot_templates
-        header = f"🤖 AI DEEP-SCAN: {target.name}"
-        embed_color = 0xff00ff # Purple for AI/Bots
+        log_templates, header, color = bot_templates, f"🤖 AI DEEP-SCAN: {target.name}", 0xff00ff
     else:
-        log_templates = human_templates
-        header = f"📜 SYSTEM LOGS: {target.name}"
-        embed_color = 0x5865f2 # Blue for Humans
+        log_templates, header, color = human_templates, f"📜 SYSTEM LOGS: {target.name}", 0x5865f2
 
-    selected_logs = random.sample(log_templates, 3)
+    selected_logs = random.sample(log_templates, min(len(log_templates), 3))
     formatted_logs = "\n".join([f"[{random.randint(10,23)}:{random.randint(10,59)}] {log.format(user=target.name)}" for log in selected_logs])
     
-    embed = discord.Embed(title=header, color=embed_color)
+    embed = discord.Embed(title=header, color=color)
     embed.description = f"```ini\n[LOG START]\n{formatted_logs}\n[LOG END]```"
-    embed.set_footer(text="GHOSTNET Intelligence Protocol v5.1")
-    
     await ctx.reply(embed=embed)
 
 @bot.command(name="test-prank")
@@ -134,10 +130,8 @@ async def scan_network(ctx):
 
     if all_threats:
         status, vulnerability, color = "UNSTABLE", 100, 0xff0000
-        threat_label = f"🚨 THREATS DETECTED ({len(all_threats)})"
-        threat_display = ", ".join([m.mention for m in all_threats])
-        content_msg = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ ALERT: {threat_display}"
-        ping_user = True
+        threat_label, threat_display = f"🚨 THREATS DETECTED ({len(all_threats)})", ", ".join([m.mention for m in all_threats])
+        content_msg, ping_user = f"`[SYSTEM SCAN INITIATED...]` - ⚠️ ALERT: {threat_display}", True
     else:
         status, vulnerability, color = "STABLE", random.randint(5, 40), 0x00ff00
         threat_label, threat_display = "🚨 ANOMALY", "NONE"
@@ -149,23 +143,6 @@ async def scan_network(ctx):
     embed.add_field(name=threat_label, value=threat_display, inline=False)
     await ctx.reply(content=content_msg, embed=embed, mention_author=ping_user)
 
-@bot.command(name="terminal-clear")
-@commands.has_permissions(manage_messages=True)
-async def terminal_clear(ctx, amount: int = 5):
-    if is_treated_as_isaac(ctx): return
-    mention = ctx.author.mention
-    await ctx.message.delete()
-    deleted = await ctx.channel.purge(limit=amount)
-    msg = await ctx.send(f"🧹 {mention} `Purged: {len(deleted)} packets.`")
-    await asyncio.sleep(3)
-    await msg.delete()
-
-@bot.command()
-async def ping(ctx):
-    if is_treated_as_isaac(ctx): return await ctx.reply("`ERR_TIMEOUT`")
-    await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
-
-# --- 5. EVENTS ---
 @bot.event
 async def on_message(message):
     if message.author == bot.user: return
