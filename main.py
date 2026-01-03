@@ -36,30 +36,6 @@ def is_treated_as_isaac(ctx):
 
 # --- 4. COMMANDS ---
 
-@bot.command(name="lockdown")
-@commands.has_permissions(administrator=True)
-async def lockdown(ctx):
-    if is_treated_as_isaac(ctx): return
-    
-    # Visual Countdown
-    msg = await ctx.send("`[!] WARNING: UNAUTHORIZED PACKET OVERLOAD DETECTED`")
-    await asyncio.sleep(1.5)
-    
-    for i in range(3, 0, -1):
-        await msg.edit(content=f"⚠️ **GHOSTNET LOCKDOWN INITIATED: {i}...**")
-        await asyncio.sleep(1)
-    
-    # The Finale
-    embed = discord.Embed(
-        title="🛑 CHANNEL SECURED", 
-        description="```diff\n- FIREWALL: ACTIVE\n- ENCRYPTION: 4096-BIT\n- INBOUND TRAFFIC: BLOCKED\n```",
-        color=0xff0000
-    )
-    embed.add_field(name="STATUS", value="`NETWORK ISOLATION COMPLETE`")
-    embed.set_footer(text="GHOSTNET Security Layer v9.0")
-    
-    await msg.edit(content="🚨 **TERMINAL SECURED.**", embed=embed)
-
 @bot.command(name="help")
 async def help_cmd(ctx):
     if is_treated_as_isaac(ctx):
@@ -70,14 +46,49 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="💀 PRANK TOOLS", 
-                        value="`!hack @user`\n`!test-prank [user]`\n`!system-logs @user`\n`!lockdown`", inline=False)
+                        value="`!hack @user` - Fake breach\n`!test-prank [user]` - Toggle Isaac status\n`!system-logs @user` - Surveillance logs", inline=False)
+        embed.add_field(name="🛡️ SECURITY", 
+                        value="`!lockdown` - Silence channel (30s)\n`!scan-network` - Threat diagnostic", inline=False)
         embed.add_field(name="🛠️ UTILITY", 
-                        value="`!terminal-clear [amount]`\n`!scan-network`\n`!ping`", inline=False)
+                        value="`!terminal-clear [num]` - Purge chat\n`!ping` - Latency check", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
     else:
         embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
         embed.add_field(name="💀 COMMANDS", value="`!hack @user`\n`!ping`", inline=False)
         await ctx.reply(embed=embed)
+
+@bot.command(name="lockdown")
+@commands.has_permissions(administrator=True)
+async def lockdown(ctx):
+    if is_treated_as_isaac(ctx): return
+    
+    # 1. Start Countdown
+    msg = await ctx.send("`[!] WARNING: UNAUTHORIZED PACKET OVERLOAD DETECTED`")
+    await asyncio.sleep(1.5)
+    
+    for i in range(3, 0, -1):
+        await msg.edit(content=f"⚠️ **GHOSTNET LOCKDOWN INITIATED: {i}...**")
+        await asyncio.sleep(1)
+    
+    # 2. Silence the Channel
+    # This prevents the @everyone role from sending messages
+    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
+    
+    embed = discord.Embed(
+        title="🛑 CHANNEL SECURED", 
+        description="```diff\n- FIREWALL: ACTIVE\n- ENCRYPTION: 4096-BIT\n- INBOUND TRAFFIC: BLOCKED\n```",
+        color=0xff0000
+    )
+    embed.add_field(name="STATUS", value="`NETWORK ISOLATION COMPLETE (30S)`")
+    embed.set_footer(text="GHOSTNET Security Layer v9.0")
+    await msg.edit(content="🚨 **TERMINAL SECURED.**", embed=embed)
+
+    # 3. Wait 30 seconds
+    await asyncio.sleep(30)
+
+    # 4. Restore Permissions
+    await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=None)
+    await ctx.send("🔓 **LOCKDOWN LIFTED.** Traffic resuming...")
 
 @bot.command(name="system-logs")
 async def system_logs(ctx, member: discord.Member = None):
@@ -142,6 +153,22 @@ async def scan_network(ctx):
     embed.add_field(name="⚠️ VULNERABILITY", value=f"`{vulnerability}%`", inline=True)
     embed.add_field(name=threat_label, value=threat_display, inline=False)
     await ctx.reply(content=content_msg, embed=embed, mention_author=ping_user)
+
+@bot.command(name="terminal-clear")
+@commands.has_permissions(manage_messages=True)
+async def terminal_clear(ctx, amount: int = 5):
+    if is_treated_as_isaac(ctx): return
+    mention = ctx.author.mention
+    await ctx.message.delete()
+    deleted = await ctx.channel.purge(limit=amount)
+    msg = await ctx.send(f"🧹 {mention} `Purged: {len(deleted)} packets.`")
+    await asyncio.sleep(3)
+    await msg.delete()
+
+@bot.command()
+async def ping(ctx):
+    if is_treated_as_isaac(ctx): return await ctx.reply("`ERR_TIMEOUT`")
+    await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms")
 
 @bot.event
 async def on_message(message):
