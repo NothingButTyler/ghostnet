@@ -134,6 +134,32 @@ async def terminal_clear(ctx, amount: int = 5):
     await asyncio.sleep(3)
     await msg.delete()
 
+@bot.command(name="infect")
+@commands.has_permissions(administrator=True)
+async def infect(ctx, member: discord.Member):
+    """Adds a user to the infected list for 1 hour."""
+    if member.guild_permissions.administrator:
+        return await ctx.reply("❌ `ERROR: Target has admin immunity.`")
+    
+    # Set expiry for 1 hour from now
+    expiry = time.time() + 3600 
+    infected_users[member.id] = expiry
+    
+    embed = discord.Embed(title="☣️ PATHOGEN INJECTED", color=0xff0000)
+    embed.description = f"User **{member.name}** has been infected. All their messages will be haunted for 60 minutes."
+    await ctx.send(embed=embed)
+
+@bot.command(name="cure")
+@commands.has_permissions(administrator=True)
+async def cure(ctx, member: discord.Member):
+    """Removes a user from the infected list."""
+    if member.id in infected_users:
+        del infected_users[member.id]
+        await ctx.reply(f"💉 `Antivirus deployed. {member.name} has been cured.`")
+    else:
+        await ctx.reply(f"❓ `Target {member.name} is not currently infected.`")
+
+
 # --- 6. EVENTS & RUN ---
 
 @bot.event
