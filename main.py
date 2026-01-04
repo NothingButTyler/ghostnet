@@ -103,7 +103,7 @@ async def help_cmd(ctx):
     if ctx.author.guild_permissions.administrator:
         embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
         embed.add_field(name="☣️ BIOWARE", value="`!infect @user` | `!cure @user`", inline=True)
-        embed.add_field(name="💀 PRANK", value="`!hack @user` | `!system-logs @user`", inline=True)
+        embed.add_field(name="💀 PRANK", value="`!hack @user` | `!system-logs @user` | `!scan-network`", inline=True)
         embed.add_field(name="🛡️ SECURITY", value="`!lockdown` | `!unlock` | `!shutdown`", inline=False)
         embed.add_field(name="🛠️ UTILITY", value="`!terminal-clear [num]` | `!ping` | `!test-prank @user`", inline=False)
         await ctx.reply(content="🛡️ **Terminal Access Granted.**", embed=embed)
