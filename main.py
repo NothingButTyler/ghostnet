@@ -50,14 +50,17 @@ def is_treated_as_isaac(ctx_or_msg):
 # --- 4. THE GEMINI "SAFETY SHIELD" ---
 # This function runs in the background so it CANNOT freeze the bot
 async def get_gemini_response(prompt):
+async def get_gemini_response(prompt):
     try:
-        # Placeholder for Gemini Logic - We use asyncio.to_thread 
-        # to prevent the AI from "stopping the car" while it thinks.
-        # await asyncio.to_thread(your_gemini_function, prompt)
-        return None 
+        # We use asyncio.to_thread because the genai library is "blocking"
+        response = await asyncio.to_thread(model.generate_content, prompt)
+        
+        # Keep it short for Discord
+        return response.text[:1900] 
     except Exception as e:
         print(f"GEMINI_ERROR: {e}")
-        return "⚠️ [SIGNAL_LOST] AI_CORE_OFFLINE"
+        return "⚠️ [SIGNAL_LOST] AI_CORE_TIMEOUT"
+
 
 # --- 5. COMMANDS ---
 
