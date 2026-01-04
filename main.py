@@ -3,6 +3,12 @@ from discord.ext import commands
 import os, asyncio, random, time, uuid
 from flask import Flask
 from threading import Thread
+import google.generativeai as genai
+
+# Setup Gemini
+genai.configure(api_key=os.environ.get("GEMINI_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
+
 
 # --- 1. WEB SERVER (Improved for Render) ---
 app = Flask('')
