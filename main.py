@@ -1,20 +1,18 @@
 import discord
 from discord.ext import commands
-import os
-import asyncio
-import random
-import time
-import uuid # New: For tracking session IDs
+import os, asyncio, random, time, uuid
 from flask import Flask
 from threading import Thread
 
-# --- 1. WEB SERVER ---
+# --- 1. WEB SERVER (Render Port Binding) ---
 app = Flask('')
 @app.route('/')
-def home(): return "GHOSTNET: ONLINE"
+def home(): return f"GHOSTNET ONLINE | SESSION: {SESSION_ID}"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    # Render's default port is 10000
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
@@ -26,72 +24,74 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.remove_command('help')
 
-# SESSION ID: Helps detect if multiple bots are running
-SESSION_ID = str(uuid.uuid4())[:8]
-
+SESSION_ID = str(uuid.uuid4())[:8] # Unique tag for this run
 ISAAC_ID = 1444073106384621631
-fake_isaacs = [] 
-infected_users = {} 
-global_prank = False 
+infected_users = {} # {user_id: expiry_timestamp}
 
-# --- 3. HELPER LOGIC ---
 def is_treated_as_isaac(ctx_or_msg):
     author = ctx_or_msg.author
     if author.guild_permissions.administrator: return False
-    if global_prank: return True
     is_infected = author.id in infected_users and time.time() < infected_users[author.id]
-    return author.id == ISAAC_ID or author.id in fake_isaacs or is_infected
+    return author.id == ISAAC_ID or is_infected
 
-# --- 4. COMMANDS ---
+# --- 3. COMMANDS ---
 
 @bot.command(name="hard-reset")
 @commands.has_permissions(administrator=True)
 async def hard_reset(ctx):
-    """Kills the process entirely to fix double-messaging."""
-    await ctx.send("🚨 **TERMINATING ALL GHOSTNET SESSIONS...**")
-    os._exit(0) # Forcefully kills the script process
+    """Restarts the Render service by killing the process."""
+    await ctx.send(f"🚨 **REBOOTING SESSION `{SESSION_ID}`...**")
+    os._exit(0)
 
-@bot.command(name="ping")
-async def ping(ctx):
-    """Shows Latency and Session ID to check for duplicates."""
-    if is_treated_as_isaac(ctx): return await ctx.reply("`ERR_TIMEOUT`")
-    await ctx.reply(f"🛰️ **LATENCY:** {round(bot.latency * 1000)}ms | **SESSION:** `{SESSION_ID}`")
+@bot.command(name="help")
+async def help_cmd(ctx):
+    if is_treated_as_isaac(ctx):
+        return await ctx.reply("`ERROR: NEURAL LINK CORRUPTED`")
+
+    embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
+    embed.add_field(name="💀 PRANK", value="`!hack` | `!spoof @user [msg]` | `!system-logs`", inline=False)
+    embed.add_field(name="☣️ BIOWARE", value="`!infect @user` | `!cure @user`", inline=False)
+    embed.add_field(name="🛡️ SECURITY", value="`!lockdown` | `!hard-reset` | `!terminal-clear`", inline=False)
+    embed.set_footer(text=f"SESSION: {SESSION_ID} | STATUS: ACTIVE")
+    await ctx.reply(embed=embed)
+
+@bot.command(name="terminal-clear")
+@commands.has_permissions(manage_messages=True)
+async def terminal_clear(ctx, amount: int = 5):
+    if is_treated_as_isaac(ctx): return
+    await ctx.message.delete()
+    await ctx.channel.purge(limit=amount)
+
+@bot.command(name="infect")
+@commands.has_permissions(administrator=True)
+async def infect(ctx, member: discord.Member):
+    if member.guild_permissions.administrator: return await ctx.reply("❌ `ADMIN IMMUNITY`")
+    infected_users[member.id] = time.time() + 3600 
+    await ctx.send(f"☣️ **{member.name} has been marked for haunting.**")
+
+@bot.command(name="cure")
+@commands.has_permissions(administrator=True)
+async def cure(ctx, member: discord.Member):
+    if member.id in infected_users:
+        del infected_users[member.id]
+        await ctx.send(f"💉 **{member.name} has been cured.**")
 
 @bot.command(name="spoof")
 @commands.has_permissions(administrator=True, manage_webhooks=True)
 async def spoof(ctx, member: discord.Member, *, message: str):
     if is_treated_as_isaac(ctx): return
-    try:
-        await ctx.message.delete()
-        webhook = await ctx.channel.create_webhook(name=f"Ghost-{member.display_name}")
-        await webhook.send(content=message, username=member.display_name, avatar_url=member.display_avatar.url)
-        await webhook.delete()
-    except Exception as e:
-        await ctx.send(f"⚠️ `GHOSTNET ERR: {e}`")
+    await ctx.message.delete()
+    webhook = await ctx.channel.create_webhook(name=f"Ghost-{member.display_name}")
+    await webhook.send(content=message, username=member.display_name, avatar_url=member.display_avatar.url)
+    await webhook.delete()
 
-@bot.command(name="help")
-async def help_cmd(ctx):
-    if is_treated_as_isaac(ctx):
-        embed = discord.Embed(title="🛰️ GHOSTNET DIRECTORY", color=0x2b2d31)
-        embed.add_field(name="🛠️ CONFIG", value="`ERROR: NEURAL LINK CORRUPTED`", inline=False)
-        return await ctx.reply(embed=embed)
-
-    if ctx.author.guild_permissions.administrator:
-        embed = discord.Embed(title="🛰️ GHOSTNET STAFF TERMINAL", color=0x00ff00)
-        embed.add_field(name="💀 PRANK", value="`!hack` | `!spoof` | `!system-logs`", inline=False)
-        embed.add_field(name="☣️ BIOWARE", value="`!infect` | `!cure`", inline=False)
-        embed.add_field(name="🛡️ SECURITY", value="`!lockdown` | `!hard-reset` | `!shutdown`", inline=False)
-        embed.set_footer(text=f"SESSION: {SESSION_ID} | GHOST-TYPING: ACTIVE")
-        await ctx.reply(embed=embed)
-
-# --- 5. EVENTS ---
+# --- 4. EVENTS ---
 
 @bot.event
 async def on_message(message):
-    # CRITICAL: If this doesn't stop double msgs, you have two bots online.
-    if message.author == bot.user:
-        return
+    if message.author == bot.user: return
 
+    # Reaction haunting
     if message.author.id in infected_users:
         if time.time() < infected_users[message.author.id]:
             try: await message.add_reaction("☣️")
