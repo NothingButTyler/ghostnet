@@ -41,11 +41,11 @@ def callback():
 
     # Token Exchange
     data = {
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET,
+        'client_id': 1453941722324402327,
+        'client_secret': 3lClGZQzaRFAirl4lsfgbZj6HyRvR_vc,
         'grant_type': 'authorization_code',
         'code': code,
-        'redirect_uri': REDIRECT_URI
+        'redirect_uri': https://ghostnet-bot.github.io/dashboard,
     }
     r = requests.post('https://discord.com/api/v10/oauth2/token', data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
     
