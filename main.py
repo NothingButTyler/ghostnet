@@ -12,10 +12,10 @@ ISAAC_ID = 1444073106384621631
 infected_users = {} 
 
 # --- USE ENV VARIABLES FOR SECURITY ---
-CLIENT_ID = os.environ.get('CLIENT_ID') # Put your Client ID in Render Env
-CLIENT_SECRET = os.environ.get('CLIENT_SECRET') # Put your Secret in Render Env
+CLIENT_ID = os.environ.get('1453941722324402327') # Put your Client ID in Render Env
+CLIENT_SECRET = os.environ.get('3lClGZQzaRFAirl4lsfgbZj6HyRvR_vc') # Put your Secret in Render Env
 # This MUST match what you saved in the Dev Portal
-REDIRECT_URI = 'https://ghostnet.onrender.com/login-callback' 
+REDIRECT_URI = 'https://ghostnet-bot.github.io/dashboard'
 
 welcome_config = {
     "channel_id": None,
@@ -35,17 +35,17 @@ CORS(app)
 def home(): 
     return {"status": "ONLINE", "session": SESSION_ID, "bot": "GHOSTNET"}
 
-@app.route('/login-callback')
+@app.route('/dashboard')
 def callback():
     code = request.args.get('code')
     if not code: return jsonify({"error": "No code"}), 400
 
     data = {
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET,
+        'client_id': 1453941722324402327,
+        'client_secret': 3lClGZQzaRFAirl4lsfgbZj6HyRvR_vc,
         'grant_type': 'authorization_code',
         'code': code,
-        'redirect_uri': REDIRECT_URI
+        'redirect_uri': https://ghostnet-bot.github.io/dashboard
     }
     r = requests.post('https://discord.com/api/v10/oauth2/token', data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
     
