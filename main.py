@@ -12,9 +12,9 @@ ISAAC_ID = 1444073106384621631
 infected_users = {} 
 
 # OAuth2 Settings (Must match your Render URL)
-CLIENT_ID = os.environ.get('CLIENT_ID')
-CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
-REDIRECT_URI = 'https://ghostnet.onrender.com/login-callback'
+CLIENT_ID = os.environ.get('1453941722324402327')
+CLIENT_SECRET = os.environ.get('3lClGZQzaRFAirl4lsfgbZj6HyRvR_vc')
+REDIRECT_URI = 'https://ghostnet-bot.github.io/dashboard'
 
 welcome_config = {
     "channel_id": None,
@@ -34,7 +34,7 @@ CORS(app)
 def home(): 
     return {"status": "ONLINE", "session": SESSION_ID, "system": "GHOSTNET_CORE"}
 
-@app.route('/login-callback')
+@app.route('/dashboard')
 def callback():
     code = request.args.get('code')
     if not code: return jsonify({"error": "No code found"}), 400
