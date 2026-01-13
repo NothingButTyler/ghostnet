@@ -1,42 +1,26 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import os, asyncio, uuid, time
-from flask import Flask, jsonify, request
+import os, asyncio, uuid
+from flask import Flask
 from threading import Thread
 
-# --- 1. SHARED SECURITY DATA ---
-# In a production app, you'd use a database like SQLite or MongoDB.
-security_logs = []
-blacklist = set()
-
-# --- 2. WEB SERVER (Security API Routes) ---
+# --- 1. WEB SERVER (Render Support) ---
 app = Flask('')
-
-@app.route('/api/security/logs', methods=['GET'])
-def get_logs():
-    # JavaScript fetch() will hit this to get the audit log
-    return jsonify(security_logs[-50:]) # Return last 50 events
-
-@app.route('/api/security/blacklist', methods=['GET', 'POST'])
-def manage_blacklist():
-    if request.method == 'POST':
-        user_id = request.json.get('user_id')
-        blacklist.add(int(user_id))
-        return jsonify({"status": "success", "added": user_id})
-    return jsonify(list(blacklist))
-
 @app.route('/')
-def home(): return "GHOSTNET DASHBOARD API: ONLINE"
+def home(): return f"GHOSTNET SLASH-PROTOCOL: ONLINE | SESSION: {SESSION_ID}"
 
 def run():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
-    Thread(target=run, daemon=True).start()
+    t = Thread(target=run)
+    t.daemon = True
+    t.start()
 
-# --- 3. BOT CORE ---
+# --- 2. BOT CORE ---
+# We still need a CommandTree for Slash Commands
 class GhostNet(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
@@ -44,49 +28,57 @@ class GhostNet(commands.Bot):
         self.SESSION_ID = str(uuid.uuid4())[:8]
 
     async def setup_hook(self):
+        # Syncs the commands to Discord's API
         await self.tree.sync()
+        print(f"Synced slash commands for Session {self.SESSION_ID}")
 
 bot = GhostNet()
+SESSION_ID = bot.SESSION_ID
 
-def log_event(event_type, details):
-    entry = {
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "event": event_type,
-        "details": details
-    }
-    security_logs.append(entry)
+# Storage for Welcome Config
+welcome_config = {"channel_id": None, "message": "Welcome {user} to the server."}
 
-# --- 4. SLASH COMMANDS ---
+# --- 3. SLASH COMMANDS ---
 
-@bot.tree.command(name="security-logs", description="View recent security audit events")
+@bot.tree.command(name="ping", description="Check terminal latency and session ID")
+async def ping(interaction: discord.Interaction):
+    latency = round(bot.latency * 1000)
+    await interaction.response.send_message(
+        f"🛰️ **SESSION:** `{SESSION_ID}`\n⏳ **LATENCY:** {latency}ms"
+    )
+
+@bot.tree.command(name="welcome-setup", description="Set the channel for welcome messages")
 @app_commands.checks.has_permissions(administrator=True)
-async def security_logs_cmd(interaction: discord.Interaction):
-    if not security_logs:
-        return await interaction.response.send_message("📭 No logs recorded yet.")
-    
-    recent = security_logs[-5:]
-    log_text = "\n".join([f"[{l['timestamp']}] **{l['event']}**: {l['details']}" for l in recent])
-    
-    embed = discord.Embed(title="🛡️ Security Audit Log", description=log_text, color=0xff0000)
-    await interaction.response.send_message(embed=embed)
+async def welcome_setup(interaction: discord.Interaction, channel: discord.TextChannel):
+    welcome_config["channel_id"] = channel.id
+    await interaction.response.send_message(f"✅ Welcome destination set to {channel.mention}")
 
-@bot.tree.command(name="blacklist-add", description="Add a user to the security blacklist")
+@bot.tree.command(name="welcome-edit", description="Change the welcome message text")
 @app_commands.checks.has_permissions(administrator=True)
-async def blacklist_add(interaction: discord.Interaction, user: discord.Member):
-    blacklist.add(user.id)
-    log_event("BLACKLIST_ADD", f"User {user.name} added by {interaction.user.name}")
-    await interaction.response.send_message(f"🚫 {user.mention} has been blacklisted from terminal access.")
+async def welcome_edit(interaction: discord.Interaction, message: str):
+    welcome_config["message"] = message
+    await interaction.response.send_message(f"📝 Template updated to: `{message}`")
 
-# --- 5. AUTOMATED AUDIT EVENTS ---
+@bot.tree.command(name="hard-reset", description="Force restart the bot (Render Fix)")
+@app_commands.checks.has_permissions(administrator=True)
+async def hard_reset(interaction: discord.Interaction):
+    await interaction.response.send_message(f"🚨 Killing Session `{SESSION_ID}`... Restarting.")
+    os._exit(0)
+
+# --- 4. EVENTS ---
 
 @bot.event
-async def on_message_delete(message):
-    if message.author.bot: return
-    log_event("MSG_DELETE", f"Message by {message.author} deleted in #{message.channel}")
+async def on_member_join(member):
+    if welcome_config["channel_id"]:
+        channel = bot.get_channel(welcome_config["channel_id"])
+        if channel:
+            msg = welcome_config["message"].replace("{user}", member.mention)
+            embed = discord.Embed(title="🛰️ NEW USER DETECTED", description=msg, color=0x00ff00)
+            await channel.send(embed=embed)
 
 @bot.event
-async def on_member_ban(guild, user):
-    log_event("MEMBER_BAN", f"User {user.name} was banned from the server.")
+async def on_ready():
+    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
 
 if __name__ == "__main__":
     keep_alive()
