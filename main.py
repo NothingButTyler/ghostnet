@@ -54,6 +54,37 @@ class GhostNet(commands.Bot):
         print(f"🛰️ GHOSTNET: Systems synced.")
 
 bot = GhostNet()
+SESSION_ID = bot.SESSION_ID
+
+# Storage for Welcome Config
+welcome_config = {"channel_id": None, "message": "Welcome {user} to the server."}
+
+# --- 3. SLASH COMMANDS ---
+
+@bot.tree.command(name="ping", description="Check terminal latency and session ID")
+async def ping(interaction: discord.Interaction):
+    latency = round(bot.latency * 1000)
+    await interaction.response.send_message(
+        f"🛰️ **SESSION:** `{SESSION_ID}`\n⏳ **LATENCY:** {latency}ms"
+    )
+
+@bot.tree.command(name="welcome-setup", description="Set the channel for welcome messages")
+@app_commands.checks.has_permissions(administrator=True)
+async def welcome_setup(interaction: discord.Interaction, channel: discord.TextChannel):
+    welcome_config["channel_id"] = channel.id
+    await interaction.response.send_message(f"✅ Welcome destination set to {channel.mention}")
+
+@bot.tree.command(name="welcome-edit", description="Change the welcome message text")
+@app_commands.checks.has_permissions(administrator=True)
+async def welcome_edit(interaction: discord.Interaction, message: str):
+    welcome_config["message"] = message
+    await interaction.response.send_message(f"📝 Template updated to: `{message}`")
+
+@bot.tree.command(name="hard-reset", description="Force restart the bot (Render Fix)")
+@app_commands.checks.has_permissions(administrator=True)
+async def hard_reset(interaction: discord.Interaction):
+    await interaction.response.send_message(f"🚨 Killing Session `{SESSION_ID}`... Restarting.")
+    os._exit(0)
 
 # --- 4. SECURITY PROTOCOLS ---
 
