@@ -5,9 +5,9 @@ import sqlite3
 import os
 import random
 from flask import Flask, jsonify
-from flask_cors import CORS 
+from flask_cors import CORS
 from threading import Thread
-import google.generativeai as genai 
+import google.generativeai as genai
 
 # --- 1. DATABASE ARCHITECTURE ---
 def init_db():
