@@ -4,10 +4,10 @@ from discord.ext import commands
 import sqlite3
 import os
 import random
-import asyncio
 from flask import Flask, jsonify
 from flask_cors import CORS
 from threading import Thread
+import google.generativeai as genai
 
 # --- 1. DASHBOARD SETUP ---
 app = Flask('')
@@ -17,57 +17,33 @@ CORS(app)
 def home():
     return "GHOSTNET CORE: ONLINE"
 
-@app.route('/api/status')
-def status():
-    return jsonify({"status": "online", "systems": "nominal"})
-
 def run_web():
-    # Render specifically looks for port 10000
+    # Render looks for port 10000 to keep the service "Live"
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
 
 # --- 2. DATABASE SYSTEM ---
 def init_db():
-    try:
-        conn = sqlite3.connect("economy.db")
-        cursor = conn.cursor()
-        # Create users table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY, 
-                balance INTEGER DEFAULT 100
-            )
-        """)
-        # Create blacklist table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS blacklist (
-                user_id INTEGER PRIMARY KEY, 
-                reason TEXT
-            )
-        """)
-        conn.commit()
-        conn.close()
-        print("✅ DATABASE: Connection established.")
-    except Exception as e:
-        print(f"❌ DATABASE ERROR: {e}")
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
+    # Users & Balance table
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance INTEGER DEFAULT 100)")
+    # Blacklist table
+    cursor.execute("CREATE TABLE IF NOT EXISTS blacklist (user_id INTEGER PRIMARY KEY, reason TEXT)")
+    conn.commit()
+    conn.close()
+    print("✅ DATABASE: Systems verified.")
 
 # --- 3. BOT ARCHITECTURE ---
 class GhostNet(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.all()
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=discord.Intents.all())
 
     async def setup_hook(self):
-        # Start the web server in the background
-        thread = Thread(target=run_web)
-        thread.daemon = True
-        thread.start()
-        
-        # Initialize Database
         init_db()
-        
-        # Sync Slash Commands
+        # Starts the web server in a background thread
+        Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ CORE: Logged in as {self.user} (ID: {self.user.id})")
+        print(f"✅ CORE: {self.user} is operational.")
 
 bot = GhostNet()
 
@@ -89,24 +65,17 @@ async def work(interaction: discord.Interaction):
     conn.commit()
     conn.close()
     
-    await interaction.response.send_message(f"💻 **TASK SUCCESS:** You earned `{reward}` bits.")
-
-@bot.tree.command(name="balance", description="Check your current bit count")
-async def balance(interaction: discord.Interaction):
-    user_id = interaction.user.id
-    conn = sqlite3.connect("economy.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-    result = cursor.fetchone()
-    conn.close()
-    
-    bal = result[0] if result else 0
-    await interaction.response.send_message(f"🏦 **ACCOUNT:** {interaction.user.name} | **BALANCE:** `{bal}` bits")
+    await interaction.response.send_message(f"💻 **TASK SUCCESS:** Earned `{reward}` bits.")
 
 # --- 5. EXECUTION ---
 if __name__ == "__main__":
+    # AI Config (Optional)
+    api_key = os.environ.get("GEMINI_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+        
     token = os.environ.get("DISCORD_TOKEN")
-    if not token:
-        print("❌ CRITICAL ERROR: DISCORD_TOKEN not found in environment.")
-    else:
+    if token:
         bot.run(token)
+    else:
+        print("❌ CRITICAL: DISCORD_TOKEN not found in Render Environment Variables.")
