@@ -4,10 +4,10 @@ from discord.ext import commands
 import sqlite3
 import os
 import time
-import random
+import random 
 from datetime import datetime, timedelta
 import pytz 
-from flask import Flask, jsonify  
+from flask import Flask, jsonify 
 from flask_cors import CORS
 from threading import Thread
 import google.generativeai as genai
@@ -17,12 +17,7 @@ app = Flask('')
 CORS(app)
 
 @app.route('/')
-def home(): 
-    return "GHOSTNET CORE: ONLINE"
-
-@app.route('/api/status')
-def status():
-    return jsonify({"status": "online", "system": "ghostnet_v3"})
+def home(): return "GHOSTNET CORE: ONLINE"
 
 def run_web():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
@@ -39,12 +34,6 @@ def init_db():
             streak INTEGER DEFAULT 0
         )
     """)
-    # Migration check for columns
-    cursor.execute("PRAGMA table_info(users)")
-    cols = [c[1] for c in cursor.fetchall()]
-    if "last_daily_date" not in cols:
-        cursor.execute("ALTER TABLE users ADD COLUMN last_daily_date TEXT")
-    
     conn.commit()
     conn.close()
 
@@ -57,13 +46,13 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ GHOSTNET: Midnight EST System Online.")
+        print(f"✅ GHOSTNET: Operational.")
 
 bot = GhostNet()
 
-# --- 4. COMMANDS ---
+# --- 4. THE DAILY COMMAND ---
 
-@bot.tree.command(name="daily", description="Claim daily bits (Resets 12:00 AM EST)")
+@bot.tree.command(name="daily", description="Claim your daily bits (Resets 12:00 AM EST)")
 async def daily(interaction: discord.Interaction):
     user_id = interaction.user.id
     
@@ -72,7 +61,7 @@ async def daily(interaction: discord.Interaction):
     now_est = datetime.now(est)
     today_str = now_est.strftime('%Y-%m-%d')
     
-    # Calculate Next Midnight EST for the Embed
+    # Calculate Next Midnight EST
     tomorrow = now_est + timedelta(days=1)
     next_midnight = est.localize(datetime(tomorrow.year, tomorrow.month, tomorrow.day, 0, 0, 0))
     next_midnight_ts = int(next_midnight.timestamp())
@@ -84,16 +73,21 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
     balance, last_daily_date, streak = res
 
-    # 1. Cooldown Check (EST Date based)
+    # --- IF ALREADY CLAIMED (Public Embed) ---
     if last_daily_date == today_str:
-        await interaction.response.send_message(
-            f"🚫 Already claimed! Reset: <t:{next_midnight_ts}:t> EST (<t:{next_midnight_ts}:R>)", 
-            ephemeral=True
+        embed_error = discord.Embed(
+            title="🚫 Access Denied",
+            description=f"You already got your daily today! Try again @ <t:{next_midnight_ts}:t> EST",
+            color=0xff4b4b # Red color for error
         )
+        embed_error.set_footer(text=f"Next reset in roughly {(next_midnight - now_est).seconds // 3600} hours.")
+        
+        # Removed ephemeral=True so everyone sees it
+        await interaction.response.send_message(embed=embed_error)
         conn.close()
         return
 
-    # 2. Streak Logic
+    # --- STREAK LOGIC ---
     yesterday_str = (now_est - timedelta(days=1)).strftime('%Y-%m-%d')
     
     if last_daily_date == yesterday_str:
@@ -101,7 +95,7 @@ async def daily(interaction: discord.Interaction):
     elif last_daily_date is None:
         new_streak = 1
     else:
-        # Subtract streak based on missed days
+        # Decrease streak by 1 for every day missed
         last_dt = datetime.strptime(last_daily_date, '%Y-%m-%d')
         days_missed = (now_est.replace(tzinfo=None) - last_dt).days - 1
         new_streak = max(0, streak - days_missed) + 1
@@ -113,7 +107,7 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    # 3. Styled Embed
+    # --- SUCCESS EMBED ---
     embed = discord.Embed(
         title=f"💳 {interaction.user.name}'s Daily Coins",
         description=f"**{total_reward:,}** was placed in your wallet!",
@@ -128,16 +122,10 @@ async def daily(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="work", description="Earn random bits")
-async def work(interaction: discord.Interaction):
-    gain = random.randint(500, 1500) # Now uses the restored random import
-    with sqlite3.connect("economy.db") as conn:
-        conn.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (gain, interaction.user.id))
-    await interaction.response.send_message(f"💼 You worked and earned **{gain:,}** bits!")
-
 # --- 5. RUN ---
 if __name__ == "__main__":
+    token = os.environ.get("DISCORD_TOKEN")
     api_key = os.environ.get("GEMINI_KEY")
     if api_key:
         genai.configure(api_key=api_key)
-    bot.run(os.environ.get("DISCORD_TOKEN"))
+    bot.run(token)
