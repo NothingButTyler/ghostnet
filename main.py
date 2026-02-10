@@ -53,7 +53,7 @@ bot = GhostNet()
 
 # --- 4. THE DAILY COMMAND ---
 
-@bot.tree.command(name="daily", description="Claim your daily bits (Resets 12:00 AM EST)")
+@bot.tree.command(name="daily", description="Each day you can get an injection of bits and maintain a streak")
 async def daily(interaction: discord.Interaction):
     user_id = interaction.user.id
     
@@ -78,7 +78,7 @@ async def daily(interaction: discord.Interaction):
     if last_daily_date == today_str:
         embed_error = discord.Embed(
             title="🚫 Daily Already Claimed",
-            description=f"You already got your daily today! Try again @ <t:{next_midnight_ts}:t> EST",
+            description=f"You already got your daily today! Try again <t:{next_midnight_ts}:t> EST",
             color=0xff4b4b 
         )
         embed_error.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
