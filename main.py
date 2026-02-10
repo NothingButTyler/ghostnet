@@ -5,6 +5,7 @@ import sqlite3
 import os
 import time
 import random 
+import requests # Restored for your requirements
 from datetime import datetime, timedelta
 import pytz 
 from flask import Flask, jsonify 
@@ -46,13 +47,13 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ GHOSTNET: Operational.")
+        print(f"✅ GHOSTNET: Operational and Synced.")
 
 bot = GhostNet()
 
 # --- 4. THE DAILY COMMAND ---
 
-@bot.tree.command(name="daily", description="Claim your daily bits (Resets 12:00 AM EST)")
+@bot.tree.command(name="daily", description="Each day you can get ann injection of bits and maintain a streak")
 async def daily(interaction: discord.Interaction):
     user_id = interaction.user.id
     
@@ -73,21 +74,20 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
     balance, last_daily_date, streak = res
 
-    # --- IF ALREADY CLAIMED (Public Embed) ---
+    # --- PUBLIC ERROR EMBED (If already claimed) ---
     if last_daily_date == today_str:
         embed_error = discord.Embed(
-            title="🚫 Access Denied",
-            description=f"You already got your daily today! Try again @ <t:{next_midnight_ts}:t> EST",
-            color=0xff4b4b # Red color for error
+            title="🚫 Daily Already Claimed",
+            description=f"You already got your daily today! Try again <t:{next_midnight_ts}:t> EST",
+            color=0xff4b4b 
         )
-        embed_error.set_footer(text=f"Next reset in roughly {(next_midnight - now_est).seconds // 3600} hours.")
-        
-        # Removed ephemeral=True so everyone sees it
+        embed_error.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+        # Not ephemeral, so everyone sees it
         await interaction.response.send_message(embed=embed_error)
         conn.close()
         return
 
-    # --- STREAK LOGIC ---
+    # --- STREAK LOGIC (Decreasing) ---
     yesterday_str = (now_est - timedelta(days=1)).strftime('%Y-%m-%d')
     
     if last_daily_date == yesterday_str:
@@ -95,7 +95,7 @@ async def daily(interaction: discord.Interaction):
     elif last_daily_date is None:
         new_streak = 1
     else:
-        # Decrease streak by 1 for every day missed
+        # Subtract from streak for missed days
         last_dt = datetime.strptime(last_daily_date, '%Y-%m-%d')
         days_missed = (now_est.replace(tzinfo=None) - last_dt).days - 1
         new_streak = max(0, streak - days_missed) + 1
