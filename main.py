@@ -32,6 +32,7 @@ def init_db():
             balance INTEGER DEFAULT 100, 
             bank INTEGER DEFAULT 0,
             inventory_val INTEGER DEFAULT 0,
+            market_val INTEGER DEFAULT 0,
             last_daily_date TEXT, 
             streak INTEGER DEFAULT 0
         )
@@ -39,34 +40,44 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- 3. THE INTERACTIVE VIEW (Buttons) ---
+# --- 3. INTERACTIVE UI (Toggling Views) ---
 class BalanceView(discord.ui.View):
-    def __init__(self, target, wallet, bank, inv):
-        super().__init__(timeout=120) # Buttons last for 2 minutes
+    def __init__(self, target, data):
+        super().__init__(timeout=120)
         self.target = target
-        self.wallet = wallet
-        self.bank = bank
-        self.inv = inv
-        self.net_worth = wallet + bank + inv
+        self.wallet, self.bank, self.inv, self.market = data
+        self.total = self.wallet + self.bank + self.inv + self.market
+
+    def get_net_worth_embed(self):
+        embed = discord.Embed(title=f"! (•‿•)و's Net Worth", color=0x2b2d31)
+        embed.set_author(name="Global Rank: #30,778", icon_url=self.target.display_avatar.url)
+        embed.add_field(name="Coins", value=f"🪙 {self.wallet:,}", inline=False)
+        embed.add_field(name="Inventory", value=f"🎒 {self.inv:,}", inline=False)
+        embed.add_field(name="Market", value=f"🏪 {self.market:,}", inline=False)
+        embed.add_field(name="Total", value=f"💼 {self.total:,}", inline=False)
+        return embed
+
+    def get_balances_embed(self):
+        embed = discord.Embed(title=f"! (•‿•)و's Balances", color=0x2b2d31)
+        embed.set_author(name="Global Rank: #30,778", icon_url=self.target.display_avatar.url)
+        # Using exact emojis from your screenshots
+        desc = (
+            f"🪙 {self.wallet:,}\n"
+            f"🏛️ {self.bank:,} / 2,574,231\n"
+            f"🎭 10,364\n"
+            f"🐟 1,260\n"
+            f"🔮 0"
+        )
+        embed.description = desc
+        return embed
 
     @discord.ui.button(label="Balances", style=discord.ButtonStyle.secondary)
-    async def balances_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(title=f"💳 {self.target.display_name}'s Balances", color=0x2b2d31)
-        embed.add_field(
-            name="Coins", 
-            value=f"🪙 {self.wallet:,}\n🏦 {self.bank:,} / 2,574,231\n🎒 {self.inv:,}", 
-            inline=False
-        )
-        # We must pass 'view=self' again so buttons stay on the edit
-        await interaction.response.edit_message(embed=embed, view=self)
+    async def balances(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(embed=self.get_balances_embed(), view=self)
 
-    @discord.ui.button(label="Net Worth", style=discord.ButtonStyle.primary)
-    async def networth_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(title=f"💳 {self.target.display_name}'s Net Worth", color=0x2b2d31)
-        embed.set_author(name="Global Rank: #---", icon_url=self.target.display_avatar.url)
-        embed.add_field(name="Coins", value=f"🪙 {self.wallet:,}\n🏛️ {self.bank:,} / 2,574,231\n🎒 {self.inv:,}", inline=True)
-        embed.add_field(name="Net Worth", value=f"🪙 {self.net_worth:,}\nInventory: 📦 {self.inv:,}", inline=True)
-        await interaction.response.edit_message(embed=embed, view=self)
+    @discord.ui.button(label="Net Worth", style=discord.ButtonStyle.secondary)
+    async def net_worth(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(embed=self.get_net_worth_embed(), view=self)
 
 # --- 4. BOT SETUP ---
 class GhostNet(commands.Bot):
@@ -77,67 +88,48 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ GHOSTNET: Tree Synced. Buttons active.")
 
 bot = GhostNet()
 
-# --- 5. UPDATED BALANCE COMMAND ---
-@bot.tree.command(name="balance", description="Check balances or net worth")
+@bot.tree.command(name="balance", description="Check your balances and net worth")
 async def balance(interaction: discord.Interaction, user: discord.Member = None):
     target = user or interaction.user
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (target.id,))
-    cursor.execute("SELECT balance, bank, inventory_val FROM users WHERE user_id = ?", (target.id,))
-    wallet, bank, inv = cursor.fetchone()
+    cursor.execute("SELECT balance, bank, inventory_val, market_val FROM users WHERE user_id = ?", (target.id,))
+    data = cursor.fetchone()
     conn.close()
 
-    # Define the view and show Net Worth as default
-    view = BalanceView(target, wallet, bank, inv)
-    
-    embed = discord.Embed(title=f"💳 {target.display_name}'s Net Worth", color=0x2b2d31)
-    embed.set_author(name="Global Rank: #---", icon_url=target.display_avatar.url)
-    embed.add_field(name="Coins", value=f"🪙 {wallet:,}\n🏛️ {bank:,} / 2,574,231\n🎒 {inv:,}", inline=True)
-    embed.add_field(name="Net Worth", value=f"🪙 {wallet + bank + inv:,}\nInventory: 📦 {inv:,}", inline=True)
-    
-    # CRITICAL: We pass 'view=view' here
-    await interaction.response.send_message(embed=embed, view=view)
+    view = BalanceView(target, data)
+    # Start with the Net Worth view as the default
+    await interaction.response.send_message(embed=view.get_net_worth_embed(), view=view)
 
-# --- DAILY & WORK (Kept for completeness) ---
-@bot.tree.command(name="daily", description="Claim daily bits (Resets 12AM EST)")
+# --- 5. THE DAILY COMMAND (Midnight EST Reset) ---
+@bot.tree.command(name="daily", description="Claim your daily bits")
 async def daily(interaction: discord.Interaction):
     user_id = interaction.user.id
     est = pytz.timezone('US/Eastern')
     now_est = datetime.now(est)
     today_str = now_est.strftime('%Y-%m-%d')
-    next_ts = int((est.localize(datetime(now_est.year, now_est.month, now_est.day, 0, 0, 0)) + timedelta(days=1)).timestamp())
-
+    next_reset = (est.localize(datetime(now_est.year, now_est.month, now_est.day, 0, 0, 0)) + timedelta(days=1))
+    
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
-    cursor.execute("SELECT balance, last_daily_date, streak FROM users WHERE user_id = ?", (user_id,))
-    balance, last_date, streak = cursor.fetchone()
+    cursor.execute("SELECT balance, last_daily_date FROM users WHERE user_id = ?", (user_id,))
+    res = cursor.fetchone()
 
-    if last_date == today_str:
-        embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{next_ts}:R>", color=0xff4b4b)
+    if res and res[1] == today_str:
+        embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed)
-        conn.close()
         return
 
-    yesterday = (now_est - timedelta(days=1)).strftime('%Y-%m-%d')
-    new_streak = (streak + 1) if last_date == yesterday else 1
-    reward = 100000 + (1080 * new_streak)
-    cursor.execute("UPDATE users SET balance = balance + ?, last_daily_date = ?, streak = ? WHERE user_id = ?", (reward, today_str, new_streak, user_id))
+    reward = 100000
+    cursor.execute("UPDATE users SET balance = balance + ?, last_daily_date = ? WHERE user_id = ?", (reward, today_str, user_id))
     conn.commit()
     conn.close()
 
-    embed = discord.Embed(title=f"💳 {interaction.user.name}'s Daily Coins", color=0x2b2d31)
-    embed.add_field(name="Base", value="🪙 100,000", inline=True)
-    embed.add_field(name="Streak Bonus", value=f"🪙 {1080 * new_streak:,}", inline=True)
-    embed.add_field(name="Next Daily", value=f"<t:{next_ts}:R>", inline=True)
-    embed.add_field(name="Streak", value=f"🔥 {new_streak}", inline=True)
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(f"✅ You claimed **🪙 {reward:,}** bits!")
 
-# --- 6. RUN ---
 if __name__ == "__main__":
     bot.run(os.environ.get("DISCORD_TOKEN"))
