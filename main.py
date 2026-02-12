@@ -79,8 +79,8 @@ async def balance(interaction: discord.Interaction, user: discord.Member = None)
     embed.set_author(name="Global Rank: #---", icon_url=target.display_avatar.url)
     
     # Matching your screenshot UI
-    embed.add_field(name="Coins", value=f"🟡 {wallet:,}\n🏛️ {bank:,} / 2,574,231\n🎒 {inv:,}", inline=True)
-    embed.add_field(name="Net Worth", value=f"🟡 {net_worth:,}\nInventory: 📦 {inv:,}", inline=True)
+    embed.add_field(name="Coins", value=f"🪙 {wallet:,}\n🏦 {bank:,} / 2,574,231\n🎒 {inv:,}", inline=True)
+    embed.add_field(name="Net Worth", value=f"🪙 {net_worth:,}\nInventory: 📦 {inv:,}", inline=True)
     
     await interaction.response.send_message(embed=embed)
 
