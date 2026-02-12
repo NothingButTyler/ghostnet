@@ -74,11 +74,11 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
     balance, last_daily_date, streak = res
 
-    # --- PUBLIC ERROR EMBED ---
+    # --- PUBLIC ERROR EMBED (If already claimed today) ---
     if last_daily_date == today_str:
         embed_error = discord.Embed(
             title="🚫 Already Claimed",
-            # Use :R for relative time ("in 5 hours", "in a day")
+            # This now shows "in 8 hours" or "in a day"
             description=f"You already got your daily today! Try again <t:{next_midnight_ts}:R>",
             color=0xff4b4b 
         )
@@ -116,7 +116,7 @@ async def daily(interaction: discord.Interaction):
     embed.add_field(name="Streak Bonus", value=f"⟡ {1080 * new_streak:,}", inline=True)
     embed.add_field(name="Donor Bonus", value="⟡ 0", inline=True)
     
-    # "Next Daily" now formatted as a relative countdown
+    # "Next Daily" formatted as a relative countdown ("in a day")
     embed.add_field(name="Next Daily", value=f"<t:{next_midnight_ts}:R>", inline=True)
     embed.add_field(name="Next Item Reward", value="Daily Box in 1 day", inline=True)
     embed.add_field(name="Streak", value=str(new_streak), inline=True)
