@@ -82,7 +82,6 @@ async def daily(interaction: discord.Interaction):
             description=f"You already got your daily today! Try again <t:{next_midnight_ts}:R>",
             color=0xff4b4b 
         )
-        embed_error.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
         await interaction.response.send_message(embed=embed_error)
         conn.close()
         return
