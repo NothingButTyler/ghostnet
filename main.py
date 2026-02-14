@@ -4,14 +4,14 @@ from discord.ext import commands
 import sqlite3
 import os
 import time
-import random 
-import requests 
+import random  # <--- PRESERVED
+import requests # <--- PRESERVED
 from datetime import datetime, timedelta
-import pytz 
-from flask import Flask, jsonify 
+import pytz # <--- PRESERVED
+from flask import Flask, jsonify # <--- PRESERVED
 from flask_cors import CORS
 from threading import Thread
-import google.generativeai as genai
+import google.generativeai as genai # <--- PRESERVED
 
 # --- 1. WEB SERVER ---
 app = Flask('')
@@ -40,7 +40,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- 3. THE NEW PLAYER MESSAGE ---
+# --- 3. THE NEW PLAYER DM ---
 async def send_welcome_dm(user: discord.User):
     embed = discord.Embed(
         title="Welcome to **GHOSTNET** 🪙",
@@ -54,8 +54,8 @@ async def send_welcome_dm(user: discord.User):
         ),
         color=0x2b2d31
     )
-    # Using your pixel box image URL here
-    embed.set_thumbnail(url="https://i.imgur.com/your_pixel_box.png")
+    # Using your pixel box image
+    embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png") 
     
     view = discord.ui.View()
     view.add_item(discord.ui.Button(label="Commands List", url="https://discord.com", style=discord.ButtonStyle.link))
@@ -66,7 +66,7 @@ async def send_welcome_dm(user: discord.User):
     except discord.Forbidden:
         pass
 
-# --- 4. INTERACTIVE UI ---
+# --- 4. INTERACTIVE UI (Balances vs Net Worth) ---
 class BalanceView(discord.ui.View):
     def __init__(self, target, data):
         super().__init__(timeout=120)
@@ -103,9 +103,11 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
+        print("✅ GHOSTNET: All systems and commands online.")
 
 bot = GhostNet()
 
+# Global check for new players on every command
 @bot.event
 async def on_app_command_completion(interaction: discord.Interaction, command: app_commands.Command):
     user_id = interaction.user.id
@@ -119,7 +121,8 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
         await send_welcome_dm(interaction.user)
     conn.close()
 
-# --- 6. COMMANDS (ALL RESTORED) ---
+# --- 6. COMMANDS ---
+
 @bot.tree.command(name="balance", description="Check your wallet and net worth")
 async def balance(interaction: discord.Interaction, user: discord.Member = None):
     target = user or interaction.user
@@ -147,7 +150,7 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
-        embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
+        embed = discord.Embed(title="🚫 Already Claimed", description=f"Try again <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed)
         conn.close()
         return
@@ -157,6 +160,15 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
     await interaction.response.send_message(f"✅ **{interaction.user.display_name}**, you claimed **🪙 {reward:,}** bits!")
+
+@bot.tree.command(name="work", description="Earn some quick bits")
+async def work(interaction: discord.Interaction):
+    gain = random.randint(500, 2000)
+    conn = sqlite3.connect("economy.db")
+    conn.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (gain, interaction.user.id))
+    conn.commit()
+    conn.close()
+    await interaction.response.send_message(f"💼 You worked and earned **🪙 {gain:,}** bits!")
 
 if __name__ == "__main__":
     bot.run(os.environ.get("DISCORD_TOKEN"))
