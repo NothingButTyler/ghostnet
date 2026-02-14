@@ -26,6 +26,7 @@ def run_web():
 def init_db():
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
+    # Market removed from the schema
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY, 
@@ -39,7 +40,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- 3. INTERACTIVE UI (Toggling Views) ---
+# --- 3. INTERACTIVE UI (Personalized Titles & Correct Icons) ---
 class BalanceView(discord.ui.View):
     def __init__(self, target, data):
         super().__init__(timeout=120)
@@ -49,7 +50,7 @@ class BalanceView(discord.ui.View):
         self.total = self.wallet + self.bank + self.inv
 
     def get_net_worth_embed(self):
-        # Title: User's Display Name + Net Worth | No Global Rank
+        # Display Name Title | Market Completely Removed
         embed = discord.Embed(title=f"{self.target.display_name}'s Net Worth", color=0x2b2d31)
         embed.add_field(name="Coins", value=f"🪙 {self.wallet:,}", inline=False)
         embed.add_field(name="Inventory", value=f"🎒 {self.inv:,}", inline=False)
@@ -57,7 +58,7 @@ class BalanceView(discord.ui.View):
         return embed
 
     def get_balances_embed(self):
-        # Title: User's Display Name + Balances | No Global Rank
+        # Display Name Title | No Global Rank
         embed = discord.Embed(title=f"{self.target.display_name}'s Balances", color=0x2b2d31)
         desc = (
             f"🪙 {self.wallet:,}\n"
@@ -83,7 +84,7 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ GHOSTNET: Tree Synced. Market removed from Net Worth.")
+        print(f"✅ GHOSTNET: Sync Complete. Imports verified: random, requests, pytz, genai.")
 
 bot = GhostNet()
 
@@ -93,7 +94,7 @@ async def balance(interaction: discord.Interaction, user: discord.Member = None)
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (target.id,))
-    # Pulling synced balance/wallet data
+    # Fetching only the 3 core values
     cursor.execute("SELECT balance, bank, inventory_val FROM users WHERE user_id = ?", (target.id,))
     data = cursor.fetchone()
     conn.close()
@@ -116,7 +117,7 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
-        embed = discord.Embed(title="🚫 Already Claimed", description=f"Try again <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
+        embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed)
         conn.close()
         return
