@@ -49,22 +49,21 @@ async def send_welcome_dm(user: discord.User):
             "there are no limits to how you can play with your friends.\n\n"
             "You can get started by using `/use` and selecting your brand new "
             "**player pack** 📦 we just gifted you.\n\n"
-            "Commands can be ran in DMs with me, or anywhere this bot is added in other servers!\n\n"
-            "After that, check out our currency commands and start exploring!"
+            "Commands can be ran in DMs with me, or anywhere this bot is added in other servers!"
         ),
         color=0x2b2d31
     )
-    # Using your orange pixel box icon
+    # Using your orange pixel pack icon
     embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png") 
     
     view = discord.ui.View()
+    view.add_item(discord.ui.Button(label="New Player Tutorials", url="https://discord.com", style=discord.ButtonStyle.link))
     view.add_item(discord.ui.Button(label="Commands List", url="https://discord.com", style=discord.ButtonStyle.link))
-    view.add_item(discord.ui.Button(label="Community Server", url="https://discord.com", style=discord.ButtonStyle.link))
     
     try:
         await user.send(embed=embed, view=view)
     except discord.Forbidden:
-        pass # User has DMs disabled
+        pass
 
 # --- 4. INTERACTIVE UI ---
 class BalanceView(discord.ui.View):
@@ -103,11 +102,9 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ GHOSTNET: Operational. New Player DM System Active.")
 
 bot = GhostNet()
 
-# Trigger DM on first command completion
 @bot.event
 async def on_app_command_completion(interaction: discord.Interaction, command: app_commands.Command):
     user_id = interaction.user.id
@@ -115,15 +112,14 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
     cursor = conn.cursor()
     cursor.execute("SELECT has_joined FROM users WHERE user_id = ?", (user_id,))
     row = cursor.fetchone()
-    
     if not row or row[0] == 0:
-        cursor.execute("INSERT OR REPLACE INTO users (user_id, has_joined) VALUES (?, 1)", (user_id, 1))
+        cursor.execute("INSERT OR REPLACE INTO users (user_id, has_joined) VALUES (?, 1)", (user_id,))
         conn.commit()
         await send_welcome_dm(interaction.user)
     conn.close()
 
 # --- 6. COMMANDS ---
-@bot.tree.command(name="balance", description="Check your wallet, bank, and total net worth")
+@bot.tree.command(name="balance", description="Check your wallet and total net worth")
 async def balance(interaction: discord.Interaction, user: discord.Member = None):
     target = user or interaction.user
     conn = sqlite3.connect("economy.db")
@@ -132,7 +128,6 @@ async def balance(interaction: discord.Interaction, user: discord.Member = None)
     cursor.execute("SELECT balance, bank, inventory_val FROM users WHERE user_id = ?", (target.id,))
     data = cursor.fetchone()
     conn.close()
-
     view = BalanceView(target, data)
     await interaction.response.send_message(embed=view.get_net_worth_embed(), view=view)
 
@@ -147,7 +142,7 @@ async def daily(interaction: discord.Interaction):
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
-    cursor.execute("SELECT balance, last_daily_date FROM users WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT balance, last_daily_date, streak FROM users WHERE user_id = ?", (user_id,))
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
@@ -156,17 +151,29 @@ async def daily(interaction: discord.Interaction):
         conn.close()
         return
 
-    reward = 100000
-    cursor.execute("UPDATE users SET balance = balance + ?, last_daily_date = ? WHERE user_id = ?", (reward, today_str, user_id))
+    # Logic to match your new screenshot layout
+    base_reward = 100000
+    streak = (res[2] if res else 0) + 1
+    streak_bonus = streak * 1000
+    total_reward = base_reward + streak_bonus
+    
+    cursor.execute("UPDATE users SET balance = balance + ?, last_daily_date = ?, streak = ? WHERE user_id = ?", (total_reward, today_str, streak, user_id))
     conn.commit()
     conn.close()
 
-    embed_success = discord.Embed(
-        title=f"{interaction.user.display_name}'s Daily Reward",
-        description=f"✅ You claimed **🪙 {reward:,}** bits!",
-        color=0x2b2d31
-    )
-    await interaction.response.send_message(embed=embed_success)
+    # Create the Grid Embed
+    embed = discord.Embed(title=f"💳 {interaction.user.display_name}'s Daily Coins", color=0x2b2d31)
+    embed.description = f"**{total_reward:,}** was placed in your wallet!"
+    
+    embed.add_field(name="Base", value=f"✧ {base_reward:,}", inline=True)
+    embed.add_field(name="Streak Bonus", value=f"✧ {streak_bonus:,}", inline=True)
+    embed.add_field(name="Donor Bonus", value="✧ 0", inline=True)
+    
+    embed.add_field(name="Next Daily", value="Today", inline=True)
+    embed.add_field(name="Next Item Reward", value="Daily Box in 1 day", inline=True)
+    embed.add_field(name="Streak", value=f"{streak}", inline=True)
+
+    await interaction.response.send_message(embed=embed)
 
 if __name__ == "__main__":
     bot.run(os.environ.get("DISCORD_TOKEN"))
