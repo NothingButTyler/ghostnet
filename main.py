@@ -45,12 +45,14 @@ class BalanceView(discord.ui.View):
     def __init__(self, target, data):
         super().__init__(timeout=120)
         self.target = target
+        # data: (wallet/balance, bank, inventory, market)
         self.wallet, self.bank, self.inv, self.market = data
         self.total = self.wallet + self.bank + self.inv + self.market
 
     def get_net_worth_embed(self):
-        embed = discord.Embed(title=f"! (•‿•)و's Net Worth", color=0x2b2d31)
-        embed.set_author(name="Global Rank: #30,778", icon_url=self.target.display_avatar.url)
+        # Title is now User's Display Name + Net Worth
+        embed = discord.Embed(title=f"{self.target.display_name}'s Net Worth", color=0x2b2d31)
+        # Global Rank removed
         embed.add_field(name="Coins", value=f"🪙 {self.wallet:,}", inline=False)
         embed.add_field(name="Inventory", value=f"🎒 {self.inv:,}", inline=False)
         embed.add_field(name="Market", value=f"🏪 {self.market:,}", inline=False)
@@ -58,15 +60,12 @@ class BalanceView(discord.ui.View):
         return embed
 
     def get_balances_embed(self):
-        embed = discord.Embed(title=f"! (•‿•)و's Balances", color=0x2b2d31)
-        embed.set_author(name="Global Rank: #30,778", icon_url=self.target.display_avatar.url)
-        # Using exact emojis from your screenshots
+        # Title is now User's Display Name + Balances
+        embed = discord.Embed(title=f"{self.target.display_name}'s Balances", color=0x2b2d31)
+        # Global Rank removed
         desc = (
             f"🪙 {self.wallet:,}\n"
-            f"🏛️ {self.bank:,} / 2,574,231\n"
-            f"🎭 10,364\n"
-            f"🐟 1,260\n"
-            f"🔮 0"
+            f"🏛️ {self.bank:,} / 2,574,231"
         )
         embed.description = desc
         return embed
@@ -88,25 +87,27 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
+        print(f"✅ GHOSTNET: Synced. Imports: random, requests, pytz, genai.")
 
 bot = GhostNet()
 
-@bot.tree.command(name="balance", description="Check your balances and net worth")
+@bot.tree.command(name="balance", description="Check your wallet, bank, and total net worth")
 async def balance(interaction: discord.Interaction, user: discord.Member = None):
     target = user or interaction.user
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (target.id,))
+    # Pulling live data to ensure coins sync with balance
     cursor.execute("SELECT balance, bank, inventory_val, market_val FROM users WHERE user_id = ?", (target.id,))
     data = cursor.fetchone()
     conn.close()
 
     view = BalanceView(target, data)
-    # Start with the Net Worth view as the default
+    # Default to Net Worth view
     await interaction.response.send_message(embed=view.get_net_worth_embed(), view=view)
 
-# --- 5. THE DAILY COMMAND (Midnight EST Reset) ---
-@bot.tree.command(name="daily", description="Claim your daily bits")
+# --- 5. THE DAILY COMMAND ---
+@bot.tree.command(name="daily", description="Claim your bits (Resets 12AM EST)")
 async def daily(interaction: discord.Interaction):
     user_id = interaction.user.id
     est = pytz.timezone('US/Eastern')
@@ -122,6 +123,7 @@ async def daily(interaction: discord.Interaction):
     if res and res[1] == today_str:
         embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed)
+        conn.close()
         return
 
     reward = 100000
@@ -129,7 +131,7 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    await interaction.response.send_message(f"✅ You claimed **🪙 {reward:,}** bits!")
+    await interaction.response.send_message(f"✅ **{interaction.user.display_name}**, you claimed **🪙 {reward:,}** bits!")
 
 if __name__ == "__main__":
     bot.run(os.environ.get("DISCORD_TOKEN"))
