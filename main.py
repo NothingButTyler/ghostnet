@@ -32,7 +32,6 @@ def init_db():
             balance INTEGER DEFAULT 100, 
             bank INTEGER DEFAULT 0,
             inventory_val INTEGER DEFAULT 0,
-            market_val INTEGER DEFAULT 0,
             last_daily_date TEXT, 
             streak INTEGER DEFAULT 0
         )
@@ -45,24 +44,21 @@ class BalanceView(discord.ui.View):
     def __init__(self, target, data):
         super().__init__(timeout=120)
         self.target = target
-        # data: (wallet/balance, bank, inventory, market)
-        self.wallet, self.bank, self.inv, self.market = data
-        self.total = self.wallet + self.bank + self.inv + self.market
+        # data: (wallet/balance, bank, inventory)
+        self.wallet, self.bank, self.inv = data
+        self.total = self.wallet + self.bank + self.inv
 
     def get_net_worth_embed(self):
-        # Title is now User's Display Name + Net Worth
+        # Title: User's Display Name + Net Worth | No Global Rank
         embed = discord.Embed(title=f"{self.target.display_name}'s Net Worth", color=0x2b2d31)
-        # Global Rank removed
         embed.add_field(name="Coins", value=f"🪙 {self.wallet:,}", inline=False)
         embed.add_field(name="Inventory", value=f"🎒 {self.inv:,}", inline=False)
-        embed.add_field(name="Market", value=f"🏪 {self.market:,}", inline=False)
         embed.add_field(name="Total", value=f"💼 {self.total:,}", inline=False)
         return embed
 
     def get_balances_embed(self):
-        # Title is now User's Display Name + Balances
+        # Title: User's Display Name + Balances | No Global Rank
         embed = discord.Embed(title=f"{self.target.display_name}'s Balances", color=0x2b2d31)
-        # Global Rank removed
         desc = (
             f"🪙 {self.wallet:,}\n"
             f"🏛️ {self.bank:,} / 2,574,231"
@@ -87,7 +83,7 @@ class GhostNet(commands.Bot):
         init_db()
         Thread(target=run_web, daemon=True).start()
         await self.tree.sync()
-        print(f"✅ GHOSTNET: Synced. Imports: random, requests, pytz, genai.")
+        print(f"✅ GHOSTNET: Tree Synced. Market removed from Net Worth.")
 
 bot = GhostNet()
 
@@ -97,13 +93,12 @@ async def balance(interaction: discord.Interaction, user: discord.Member = None)
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (target.id,))
-    # Pulling live data to ensure coins sync with balance
-    cursor.execute("SELECT balance, bank, inventory_val, market_val FROM users WHERE user_id = ?", (target.id,))
+    # Pulling synced balance/wallet data
+    cursor.execute("SELECT balance, bank, inventory_val FROM users WHERE user_id = ?", (target.id,))
     data = cursor.fetchone()
     conn.close()
 
     view = BalanceView(target, data)
-    # Default to Net Worth view
     await interaction.response.send_message(embed=view.get_net_worth_embed(), view=view)
 
 # --- 5. THE DAILY COMMAND ---
@@ -121,7 +116,7 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
-        embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
+        embed = discord.Embed(title="🚫 Already Claimed", description=f"Try again <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed)
         conn.close()
         return
