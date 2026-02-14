@@ -48,16 +48,13 @@ async def send_welcome_dm(user: discord.User):
             "From fishing unique creatures to collecting hundreds of unique items, "
             "there are no limits to how you can play with your friends.\n\n"
             "You can get started by using `/use` and selecting your brand new "
-            "**player pack** 📦 we just gifted you.\n\n"
-            "Commands can be ran in DMs with me, or anywhere this bot is added in other servers!"
+            "**player pack** 📦 we just gifted you."
         ),
         color=0x2b2d31
     )
-    # Using your orange pixel pack icon
     embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png") 
     
     view = discord.ui.View()
-    view.add_item(discord.ui.Button(label="New Player Tutorials", url="https://discord.com", style=discord.ButtonStyle.link))
     view.add_item(discord.ui.Button(label="Commands List", url="https://discord.com", style=discord.ButtonStyle.link))
     
     try:
@@ -151,17 +148,17 @@ async def daily(interaction: discord.Interaction):
         conn.close()
         return
 
-    # Logic to match your new screenshot layout
+    # UPDATED MATH: 1080 * streak + 100,000
     base_reward = 100000
     streak = (res[2] if res else 0) + 1
-    streak_bonus = streak * 1000
+    streak_bonus = 1080 * streak
     total_reward = base_reward + streak_bonus
     
     cursor.execute("UPDATE users SET balance = balance + ?, last_daily_date = ?, streak = ? WHERE user_id = ?", (total_reward, today_str, streak, user_id))
     conn.commit()
     conn.close()
 
-    # Create the Grid Embed
+    # The Grid Embed layout
     embed = discord.Embed(title=f"💳 {interaction.user.display_name}'s Daily Coins", color=0x2b2d31)
     embed.description = f"**{total_reward:,}** was placed in your wallet!"
     
