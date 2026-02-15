@@ -4,11 +4,11 @@ from discord.ext import commands
 import sqlite3
 import os
 import time
-import random 
-import requests 
+import random
+import requests
 from datetime import datetime, timedelta
-import pytz 
-from flask import Flask, jsonify 
+import pytz
+from flask import Flask, jsonify
 from flask_cors import CORS
 from threading import Thread
 import google.generativeai as genai
