@@ -42,20 +42,26 @@ def init_db():
 
 # --- 3. NEW PLAYER DM SYSTEM ---
 async def send_welcome_dm(user: discord.User):
+    # Hyperlinked GHOSTNET title added
     embed = discord.Embed(
-        title="Welcome to **GHOSTNET** 🪙",
+        title="Welcome to [**GHOSTNET**](https://ghostnet-bot.github.io/) 🪙",
         description=(
             "From fishing unique creatures to collecting hundreds of unique items, "
             "there are no limits to how you can play with your friends.\n\n"
             "You can get started by using `/use` and selecting your brand new "
-            "**player pack** 📦 we just gifted you."
+            "**player pack** 📦 we just gifted you.\n\n"
+            "Commands can be ran in DMs with me, or anywhere this bot is added in other servers!\n\n"
+            "After that, check out our currency commands and start exploring!"
         ),
         color=0x2b2d31
     )
+    # Orange pixel pack thumbnail
     embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png") 
     
     view = discord.ui.View()
+    view.add_item(discord.ui.Button(label="New Player Tutorials", url="https://discord.com", style=discord.ButtonStyle.link))
     view.add_item(discord.ui.Button(label="Commands List", url="https://discord.com", style=discord.ButtonStyle.link))
+    view.add_item(discord.ui.Button(label="Community Server", url="https://discord.com", style=discord.ButtonStyle.link))
     
     try:
         await user.send(embed=embed, view=view)
@@ -158,7 +164,7 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    # The Grid Embed layout
+    # Grid Embed layout
     embed = discord.Embed(title=f"💳 {interaction.user.display_name}'s Daily Coins", color=0x2b2d31)
     embed.description = f"**{total_reward:,}** was placed in your wallet!"
     
