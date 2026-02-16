@@ -4,11 +4,11 @@ from discord.ext import commands
 import sqlite3
 import os
 import time
-import random
-import requests
+import random 
+import requests 
 from datetime import datetime, timedelta
-import pytz
-from flask import Flask, jsonify
+import pytz 
+from flask import Flask, jsonify 
 from flask_cors import CORS
 from threading import Thread
 import google.generativeai as genai
@@ -42,7 +42,7 @@ def init_db():
 
 # --- 3. NEW PLAYER DM SYSTEM ---
 async def send_welcome_dm(user: discord.User):
-    # Hyperlinked GHOSTNET title added
+    # Hyperlinked GHOSTNET title and pixel pack formatting
     embed = discord.Embed(
         title="Welcome to [**GHOSTNET**](https://ghostnet-bot.github.io/) 🪙",
         description=(
@@ -55,7 +55,7 @@ async def send_welcome_dm(user: discord.User):
         ),
         color=0x2b2d31
     )
-    # Orange pixel pack thumbnail
+    # Using your orange pixel box thumbnail
     embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png") 
     
     view = discord.ui.View()
@@ -140,7 +140,10 @@ async def daily(interaction: discord.Interaction):
     est = pytz.timezone('US/Eastern')
     now_est = datetime.now(est)
     today_str = now_est.strftime('%Y-%m-%d')
-    next_reset = (est.localize(datetime(now_est.year, now_est.month, now_est.day, 0, 0, 0)) + timedelta(days=1))
+    
+    # Calculate Unix timestamp for the next 12AM EST reset
+    next_reset_dt = (est.localize(datetime(now_est.year, now_est.month, now_est.day, 0, 0, 0)) + timedelta(days=1))
+    reset_ts = int(next_reset_dt.timestamp())
     
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
@@ -149,7 +152,8 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
-        embed_err = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{int(next_reset.timestamp())}:R>", color=0xff4b4b)
+        # Relative timestamp formatting: <t:timestamp:R>
+        embed_err = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{reset_ts}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed_err)
         conn.close()
         return
@@ -164,7 +168,7 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    # Grid Embed layout
+    # Grid Embed layout matching screenshot style
     embed = discord.Embed(title=f"💳 {interaction.user.display_name}'s Daily Coins", color=0x2b2d31)
     embed.description = f"**{total_reward:,}** was placed in your wallet!"
     
@@ -172,11 +176,9 @@ async def daily(interaction: discord.Interaction):
     embed.add_field(name="Streak Bonus", value=f"✧ {streak_bonus:,}", inline=True)
     embed.add_field(name="Donor Bonus", value="✧ 0", inline=True)
     
-    embed.add_field(name="Next Daily", value="Today", inline=True)
-    embed.add_field(name="Next Item Reward", value="Daily Box in 1 day", inline=True)
+    # Dynamic "Next" times using Discord Markdown
+    embed.add_field(name="Next Daily", value=f"<t:{reset_ts}:R>", inline=True)
+    embed.add_field(name="Next Item Reward", value=f"Daily Box <t:{reset_ts}:R>", inline=True)
     embed.add_field(name="Streak", value=f"{streak}", inline=True)
 
-    await interaction.response.send_message(embed=embed)
-
-if __name__ == "__main__":
-    bot.run(os.environ.get("DISCORD_TOKEN"))
+    await interaction.response.send_message(embed
