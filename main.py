@@ -42,7 +42,7 @@ def init_db():
 
 # --- 3. NEW PLAYER DM SYSTEM ---
 async def send_welcome_dm(user: discord.User):
-    # Hyperlinked GHOSTNET title and pixel pack formatting
+    # Hyperlinked title with the coin emoji
     embed = discord.Embed(
         title="Welcome to [**GHOSTNET**](https://ghostnet-bot.github.io/) 🪙",
         description=(
@@ -55,7 +55,7 @@ async def send_welcome_dm(user: discord.User):
         ),
         color=0x2b2d31
     )
-    # Using your orange pixel box thumbnail
+    # Thumbnail set to your orange pixel pack
     embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png") 
     
     view = discord.ui.View()
@@ -141,7 +141,7 @@ async def daily(interaction: discord.Interaction):
     now_est = datetime.now(est)
     today_str = now_est.strftime('%Y-%m-%d')
     
-    # Calculate Unix timestamp for the next 12AM EST reset
+    # Generate the Unix timestamp for the dynamic "grey box" countdown
     next_reset_dt = (est.localize(datetime(now_est.year, now_est.month, now_est.day, 0, 0, 0)) + timedelta(days=1))
     reset_ts = int(next_reset_dt.timestamp())
     
@@ -152,13 +152,13 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
-        # Relative timestamp formatting: <t:timestamp:R>
+        # Error embed with relative timestamp
         embed_err = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{reset_ts}:R>", color=0xff4b4b)
         await interaction.response.send_message(embed=embed_err)
         conn.close()
         return
 
-    # UPDATED MATH: 1080 * streak + 100,000
+    # Applied math formula: 1080 * streak + 100,000
     base_reward = 100000
     streak = (res[2] if res else 0) + 1
     streak_bonus = 1080 * streak
@@ -168,7 +168,7 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    # Grid Embed layout matching screenshot style
+    # The Grid Embed layout with dynamic timestamps
     embed = discord.Embed(title=f"💳 {interaction.user.display_name}'s Daily Coins", color=0x2b2d31)
     embed.description = f"**{total_reward:,}** was placed in your wallet!"
     
@@ -176,9 +176,12 @@ async def daily(interaction: discord.Interaction):
     embed.add_field(name="Streak Bonus", value=f"✧ {streak_bonus:,}", inline=True)
     embed.add_field(name="Donor Bonus", value="✧ 0", inline=True)
     
-    # Dynamic "Next" times using Discord Markdown
+    # Using <t:timestamp:R> for that dynamic Discord countdown look
     embed.add_field(name="Next Daily", value=f"<t:{reset_ts}:R>", inline=True)
     embed.add_field(name="Next Item Reward", value=f"Daily Box <t:{reset_ts}:R>", inline=True)
     embed.add_field(name="Streak", value=f"{streak}", inline=True)
 
-    await interaction.response.send_message(embed
+    await interaction.response.send_message(embed=embed)
+
+if __name__ == "__main__":
+    bot.run(os.environ.get("DISCORD_TOKEN"))
