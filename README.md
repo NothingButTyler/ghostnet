@@ -4,7 +4,7 @@ Coming soon! Instead, check out our website: https://ghostnet-bot.github.io
 ## Getting Started
 These instructions will get you started using the bot. If you are having issues with the bot, be sure to check over these steps again or join the support server.
 ### Using the bot
-The prefix to use the bot is `` *Example: daily.*
+The prefix to use the bot is `net` *Example: net daily.*
 To get the full command list use `/help`.
 All commands use the same prefix, and are updated constantly!
 
