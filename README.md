@@ -15,4 +15,4 @@ If you need any more help with anything, join [this server](https://discord.com/
 - br3h - *Co-Owner* - [Github Profile](https://github.com/br3hyt)
 
 ## Self hosting the bot
-We are not supporting/encouraging self hosting this bot. The code is here because we use Github for the code and so you know there isn't anything suspicous.
+We are not supporting/encouraging self hosting this bot. The code is here because we use Github for our code, so you know there isn't anything suspicious.
