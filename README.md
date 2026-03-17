@@ -29,6 +29,8 @@ If you need any more help with anything, join [this server](https://discord.com/
   <img src="https://contrib.rocks/image?repo=nothingbuttyler/ghostnet" alt="contrib.rocks image" />
 </a>
 
+See also the list of [contributors](https://github.com/nothingbuttyler/ghostnet/graphs/contributors) who participated in this project.
+
 ## Self hosting the bot
 We are not supporting/encouraging self hosting this bot. The code is here because we use Github to store our code, and so you know there isn't anything suspicious.
 
