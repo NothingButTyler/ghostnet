@@ -1,5 +1,6 @@
 # GhostBot Official Repository
-[![Discord](https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=7289DA)](https://discord.gg/Y2HMVgecQT) <br/>
+[![Discord](https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=7289DA)](https://discord.gg/Y2HMVgecQT)
+[![Discord](https://img.shields.io/github/contributors/nothingbuttyler/ghostnet?color=)](https://discord.gg/Y2HMVgecQT) <br/>
 A discord bot made primarily with Python.
 Coming soon! Instead, check out our website: https://ghostnet-bot.github.io
 ## Getting Started
