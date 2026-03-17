@@ -18,8 +18,8 @@ All commands use the same prefix, and are also supported as slash commands!
 If you need any more help with anything, join [this server](https://discord.com/invite/Y2HMVgecQT)!
 ## Built With
 
-- [![Render][render-shield]][render-url] 
-- [![UptimeRobot][uptimerobot-shield]][uptimerobot-url]
+* [![Render Shield][render-shield]][render-url]
+* [![UptimeRobot][uptimerobot-shield]][uptimerobot-url]
 ## Authors
 - NothingButTyler - *Owner* - [Github Profile](https://github.com/nothingbuttyler)
 - br3h - *Co-Owner* - [Github Profile](https://github.com/br3hyt)
