@@ -44,7 +44,7 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [stars-url]: https://github.com/nothingbuttyler/ghostnet/stargazers
 [issues-shield]: https://img.shields.io/github/issues/nothingbuttyler/ghostnet?style=flat
 [issues-url]: https://github.com/nothingbuttyler/ghostnet/issues
-[use-render-shield]: https://img.shields.io/badge/RENDER_HOST-ffffff?style=flat&logo=render&logoColor=black
+[use-render-shield]: https://img.shields.io/badge/HOSTED_USING_RENDER-ffffff?style=flat&logo=render&logoColor=black
 [render_shield]: https://img.shields.io/badge/RENDER-ffffff?style=flat&logo=render&logoColor=black
 [render-url]: https://render.com
 [uptimerobot-shield]: 
