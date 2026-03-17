@@ -5,6 +5,7 @@ import sqlite3
 import os
 import pytz
 import asyncio
+import random
 from datetime import datetime, timedelta
 from flask import Flask
 from threading import Thread
@@ -21,7 +22,6 @@ def run_web():
 def init_db():
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
-    # Main User Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY, 
@@ -31,7 +31,6 @@ def init_db():
             has_joined INTEGER DEFAULT 0
         )
     """)
-    # Inventory Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS inventory (
             user_id INTEGER,
@@ -43,9 +42,23 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- 3. WELCOME SYSTEM ---
+# --- 3. BOT SETUP ---
+class GhostNet(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.all()
+        # Prefix set to 'net ' (space included) to act like Dank Memer's 'pls'
+        super().__init__(command_prefix=["net ", "Net ", "NET "], intents=intents, case_insensitive=True)
+
+    async def setup_hook(self):
+        init_db()
+        Thread(target=run_web, daemon=True).start()
+        await self.tree.sync()
+        print(f"GHOSTNET: Commands Synced. Prefix: 'net '")
+
+bot = GhostNet()
+
+# --- 4. WELCOME SYSTEM ---
 async def send_welcome_dm(user: discord.User):
-    # Give Player Pack
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
     cursor.execute("INSERT OR REPLACE INTO inventory (user_id, item_name, quantity) VALUES (?, ?, ?)", 
@@ -55,24 +68,12 @@ async def send_welcome_dm(user: discord.User):
 
     embed = discord.Embed(
         title="Welcome to [**GHOSTNET**](https://ghostnet-bot.github.io/) 🪙",
-        description="You received a **Player Pack** 📦! Use `/use item: Player Pack` to claim your starter bits.",
-        color=0x2b2d31
+        description="You received a **Player Pack** 📦! Use `net use Player Pack` to claim your starter bits.",
+        color=0xffa500
     )
     embed.set_thumbnail(url="https://i.imgur.com/image_90951b.png")
     try: await user.send(embed=embed)
     except: pass
-
-# --- 4. BOT SETUP ---
-class GhostNet(commands.Bot):
-    def __init__(self):
-        super().__init__(command_prefix="!", intents=discord.Intents.all())
-
-    async def setup_hook(self):
-        init_db()
-        Thread(target=run_web, daemon=True).start()
-        await self.tree.sync()
-
-bot = GhostNet()
 
 @bot.event
 async def on_app_command_completion(interaction: discord.Interaction, command: app_commands.Command):
@@ -87,15 +88,16 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
         await send_welcome_dm(interaction.user)
     conn.close()
 
-# --- 5. COMMANDS ---
-@bot.tree.command(name="daily", description="Claim your bits (Resets 12AM EST)")
-async def daily(interaction: discord.Interaction):
-    user_id = interaction.user.id
+# --- 5. HYBRID COMMANDS (Slash + Prefix) ---
+
+@bot.hybrid_command(name="daily", description="Claim your bits (Resets 12AM EST)")
+async def daily(ctx: commands.Context):
+    await ctx.defer()
+    user_id = ctx.author.id
     est = pytz.timezone('US/Eastern')
     now_est = datetime.now(est)
     today_str = now_est.strftime('%Y-%m-%d')
     
-    # Calculate next reset timestamp
     next_reset_dt = (est.localize(datetime(now_est.year, now_est.month, now_est.day, 0, 0, 0)) + timedelta(days=1))
     reset_ts = int(next_reset_dt.timestamp())
     
@@ -106,10 +108,8 @@ async def daily(interaction: discord.Interaction):
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
-        embed = discord.Embed(title="🚫 Already Claimed", description=f"Next reset <t:{reset_ts}:R>", color=0xff4b4b)
-        await interaction.response.send_message(embed=embed)
         conn.close()
-        return
+        return await ctx.send(f"🚫 Already claimed! Next reset <t:{reset_ts}:R>")
 
     streak = (res[2] if res else 0) + 1
     total_reward = 100000 + (1080 * streak)
@@ -119,27 +119,67 @@ async def daily(interaction: discord.Interaction):
     conn.commit()
     conn.close()
 
-    embed = discord.Embed(title=f"💳 {interaction.user.display_name}'s Daily", color=0x2b2d31)
+    embed = discord.Embed(title=f"💳 {ctx.author.display_name}'s Daily", color=0xffa500)
     embed.add_field(name="Reward", value=f"**{total_reward:,}** bits", inline=True)
     embed.add_field(name="Next Daily", value=f"<t:{reset_ts}:R>", inline=True)
     embed.add_field(name="Streak", value=f"{streak}", inline=True)
-    await interaction.response.send_message(embed=embed)
+    await ctx.send(embed=embed)
 
-@bot.tree.command(name="use", description="Use an item")
-async def use(interaction: discord.Interaction, item: str):
-    user_id = interaction.user.id
+@bot.hybrid_command(name="balance", description="Check your bit count")
+async def balance(ctx: commands.Context):
+    await ctx.defer()
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT balance FROM users WHERE user_id = ?", (ctx.author.id,))
+    res = cursor.fetchone()
+    conn.close()
+    
+    bal = res[0] if res else 0
+    await ctx.send(f"🪙 **{ctx.author.display_name}**, you have **{bal:,}** bits.")
+
+@bot.hybrid_command(name="inventory", description="View your items")
+async def inventory(ctx: commands.Context):
+    await ctx.defer()
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT item_name, quantity FROM inventory WHERE user_id = ? AND quantity > 0", (ctx.author.id,))
+    items = cursor.fetchall()
+    conn.close()
+
+    embed = discord.Embed(title=f"🎒 {ctx.author.display_name}'s Inventory", color=0xffa500)
+    if not items:
+        embed.description = "Your backpack is empty."
+    else:
+        embed.description = "\n".join([f"**{name}** — x{qty}" for name, qty in items])
+    await ctx.send(embed=embed)
+
+@bot.hybrid_command(name="use", description="Use an item from your inventory")
+async def use(ctx: commands.Context, item: str):
+    await ctx.defer()
+    user_id = ctx.author.id
+    item_title = item.title()
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT quantity FROM inventory WHERE user_id = ? AND item_name = ?", (user_id, item.title()))
+    cursor.execute("SELECT quantity FROM inventory WHERE user_id = ? AND item_name = ?", (user_id, item_title))
     res = cursor.fetchone()
 
     if not res or res[0] <= 0:
-        await interaction.response.send_message(f"❌ You don't have a **{item}**!", ephemeral=True)
-    elif item.title() == "Player Pack":
+        conn.close()
+        return await ctx.send(f"❌ You don't have a **{item_title}**!")
+
+    if item_title == "Player Pack":
+        # Starter Creatures
+        creatures = ["Neon Tetra Ghost", "Glitch Guppy", "Data Drift Eel"]
+        caught = random.choice(creatures)
+        
         cursor.execute("UPDATE inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_name = ?", (user_id, "Player Pack"))
         cursor.execute("UPDATE users SET balance = balance + 50000 WHERE user_id = ?", (user_id,))
-        await interaction.response.send_message("📦 You opened your **Player Pack** and found **50,000** bits!")
+        cursor.execute("INSERT INTO inventory (user_id, item_name, quantity) VALUES (?, ?, 1) ON CONFLICT(user_id, item_name) DO UPDATE SET quantity = quantity + 1", (user_id, caught))
+        
+        await ctx.send(f"📦 **Player Pack Opened!**\n- 🪙 **50,000 Bits**\n- 🐟 **1x {caught}**")
+    else:
+        await ctx.send(f"❓ The item **{item_title}** cannot be used yet.")
     
     conn.commit()
     conn.close()
