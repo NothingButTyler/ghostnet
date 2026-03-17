@@ -7,7 +7,7 @@ These instructions will get you started using the bot. If you are having issues 
 ### Using the bot
 The prefix to use the bot is `net` *Example: net daily.*
 To get the full command list use `net help`.
-All commands use the same prefix, and are also slash commands!
+All commands use the same prefix, and are also supported as slash commands!
 
 If you need any more help with anything, join [this server](https://discord.com/invite/Y2HMVgecQT)!
 
