@@ -232,46 +232,51 @@ async def use(ctx: commands.Context, item: str):
         conn.close()
         return await ctx.send(f"❌ You don't have a {item_title}!")
 
-    if item_title == "Player Pack":
-        creatures = [
-            "Neon Tetra Ghost",
-            "Glitch Guppy",
-            "Data Drift Eel"
-        ]
+    # --- LOOT TABLE LOGIC (NO RANDOM) ---
+    if item_title in LOOT_TABLES:
+        table = LOOT_TABLES[item_title]
 
-        caught = random.choice(creatures)
-
+        # Remove the used item
         cursor.execute("""
             UPDATE inventory
             SET quantity = quantity - 1
             WHERE user_id = ? AND item_name = ?
-        """, (user_id, "Player Pack"))
+        """, (user_id, item_title))
 
-        cursor.execute("""
-            UPDATE users
-            SET balance = balance + 50000
-            WHERE user_id = ?
-        """, (user_id,))
+        rewards_text = []
 
-        cursor.execute("""
-            INSERT INTO inventory (user_id, item_name, quantity)
-            VALUES (?, ?, 1)
-            ON CONFLICT(user_id, item_name)
-            DO UPDATE SET quantity = quantity + 1
-        """, (user_id, caught))
+        # Give currency
+        if "currency" in table:
+            cursor.execute("""
+                UPDATE users
+                SET balance = balance + ?
+                WHERE user_id = ?
+            """, (table["currency"], user_id))
+
+            rewards_text.append(f"🪙 {table['currency']:,} Bits")
+
+        # Give items
+        for reward in table.get("items", []):
+            cursor.execute("""
+                INSERT INTO inventory (user_id, item_name, quantity)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id, item_name)
+                DO UPDATE SET quantity = quantity + ?
+            """, (user_id, reward["name"], reward["amount"], reward["amount"]))
+
+            rewards_text.append(f"📦 {reward['amount']}x {reward['name']}")
+
+        conn.commit()
+        conn.close()
 
         await ctx.send(
-            f"📦 Player Pack Opened!\n"
-            f"🪙 50,000 Bits\n"
-            f"🐟 1x {caught}"
+            f"📦 {item_title} Opened!\n" +
+            "\n".join(rewards_text)
         )
 
     else:
+        conn.close()
         await ctx.send(f"❓ {item_title} cannot be used yet.")
-
-    conn.commit()
-    conn.close()
-
 
 # --- 5. START BOT ---
 
