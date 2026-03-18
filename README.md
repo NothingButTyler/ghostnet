@@ -1,6 +1,6 @@
 <p align="center">
     <img src="https://github.com/user-attachments/assets/1765aa22-c80b-457b-9623-36c80ddd1a01#gh-dark-mode-only" width="380">
-    <img src="https://github-production-user-asset-6210df.s3.amazonaws.com/252389609/565290532-36424ddd-a3fa-4f15-a664-afdb7f59bf17.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260318%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260318T033247Z&X-Amz-Expires=300&X-Amz-Signature=b89cf396e5cbaf27029e58a1a26b6c93f5295f2172237daee9f5a07f31abd830&X-Amz-SignedHeaders=host#gh-light-mode-only" width="380">
+    <img src="https://github.com/user-attachments/assets/a65ed83b-7f77-4e62-bff5-5bd5b158ec53#gh-light-mode-only" width="380">
 </p>
 
 <div align="center">
