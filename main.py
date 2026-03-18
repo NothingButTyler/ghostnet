@@ -4,11 +4,19 @@ from discord.ext import commands
 import sqlite3
 import os
 import pytz
-import random
 from datetime import datetime, timedelta
 
-# --- 1. DATABASE ---
+# --- 1. LOOT TABLES (NO RANDOM) ---
+LOOT_TABLES = {
+    "Player Pack": {
+        "currency": 50000,
+        "items": [
+            {"name": "Basic Box", "amount": 1}
+        ]
+    }
+}
 
+# --- 2. DATABASE ---
 def init_db():
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
@@ -35,9 +43,26 @@ def init_db():
     conn.commit()
     conn.close()
 
+# --- 3. AUTOCOMPLETE ---
+async def item_autocomplete(interaction: discord.Interaction, current: str):
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
 
-# --- 2. BOT SETUP ---
+    cursor.execute("""
+        SELECT item_name FROM inventory
+        WHERE user_id = ? AND quantity > 0
+    """, (interaction.user.id,))
 
+    items = cursor.fetchall()
+    conn.close()
+
+    return [
+        app_commands.Choice(name=name, value=name)
+        for (name,) in items
+        if current.lower() in name.lower()
+    ][:25]
+
+# --- 4. BOT SETUP ---
 class GhostNet(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
@@ -49,35 +74,30 @@ class GhostNet(commands.Bot):
 
     async def setup_hook(self):
         init_db()
-
-        # SAFE COMMAND SYNC (won’t crash loop)
         try:
             await self.tree.sync()
             print("GHOSTNET: Commands synced")
         except Exception as e:
-            print(f"Command sync failed: {e}")
-
+            print(f"Sync failed: {e}")
 
 bot = GhostNet()
 
-
-# --- 3. WELCOME SYSTEM ---
-
+# --- 5. WELCOME SYSTEM ---
 async def send_welcome_dm(user: discord.User):
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
 
-    cursor.execute(
-        "INSERT OR REPLACE INTO inventory (user_id, item_name, quantity) VALUES (?, ?, ?)",
-        (user.id, "Player Pack", 1)
-    )
+    cursor.execute("""
+        INSERT OR REPLACE INTO inventory (user_id, item_name, quantity)
+        VALUES (?, ?, ?)
+    """, (user.id, "Player Pack", 1))
 
     conn.commit()
     conn.close()
 
     embed = discord.Embed(
         title="Welcome to GHOSTNET 🪙",
-        description="You received a **Player Pack** 📦! Use `net use Player Pack`.",
+        description="You received a **Player Pack** 📦! Use `/use` to open it.",
         color=0xffa500
     )
 
@@ -85,7 +105,6 @@ async def send_welcome_dm(user: discord.User):
         await user.send(embed=embed)
     except:
         pass
-
 
 @bot.event
 async def on_app_command_completion(interaction: discord.Interaction, command: app_commands.Command):
@@ -98,17 +117,16 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
     row = cursor.fetchone()
 
     if not row or row[0] == 0:
-        cursor.execute(
-            "INSERT OR REPLACE INTO users (user_id, has_joined) VALUES (?, 1)",
-            (user_id,)
-        )
+        cursor.execute("""
+            INSERT OR REPLACE INTO users (user_id, has_joined)
+            VALUES (?, 1)
+        """, (user_id,))
         conn.commit()
         await send_welcome_dm(interaction.user)
 
     conn.close()
 
-
-# --- 4. COMMANDS ---
+# --- 6. COMMANDS ---
 
 @bot.hybrid_command(name="daily", description="Claim your bits (Resets 12AM EST)")
 async def daily(ctx: commands.Context):
@@ -129,10 +147,10 @@ async def daily(ctx: commands.Context):
     cursor = conn.cursor()
 
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
-    cursor.execute(
-        "SELECT balance, last_daily_date, streak FROM users WHERE user_id = ?",
-        (user_id,)
-    )
+    cursor.execute("""
+        SELECT balance, last_daily_date, streak
+        FROM users WHERE user_id = ?
+    """, (user_id,))
     res = cursor.fetchone()
 
     if res and res[1] == today_str:
@@ -162,7 +180,6 @@ async def daily(ctx: commands.Context):
 
     await ctx.send(embed=embed)
 
-
 @bot.hybrid_command(name="balance", description="Check your bits")
 async def balance(ctx: commands.Context):
     await ctx.defer()
@@ -177,7 +194,6 @@ async def balance(ctx: commands.Context):
 
     bal = res[0] if res else 0
     await ctx.send(f"🪙 {ctx.author.display_name}, you have {bal:,} bits.")
-
 
 @bot.hybrid_command(name="inventory", description="View items")
 async def inventory(ctx: commands.Context):
@@ -209,8 +225,9 @@ async def inventory(ctx: commands.Context):
 
     await ctx.send(embed=embed)
 
-
+# --- 🔥 USE COMMAND WITH AUTOCOMPLETE + LOOT TABLE ---
 @bot.hybrid_command(name="use", description="Use an item")
+@app_commands.autocomplete(item=item_autocomplete)
 async def use(ctx: commands.Context, item: str):
     await ctx.defer()
 
@@ -232,11 +249,10 @@ async def use(ctx: commands.Context, item: str):
         conn.close()
         return await ctx.send(f"❌ You don't have a {item_title}!")
 
-    # --- LOOT TABLE LOGIC (NO RANDOM) ---
     if item_title in LOOT_TABLES:
         table = LOOT_TABLES[item_title]
 
-        # Remove the used item
+        # Remove used item
         cursor.execute("""
             UPDATE inventory
             SET quantity = quantity - 1
@@ -245,7 +261,7 @@ async def use(ctx: commands.Context, item: str):
 
         rewards_text = []
 
-        # Give currency
+        # Currency
         if "currency" in table:
             cursor.execute("""
                 UPDATE users
@@ -255,7 +271,7 @@ async def use(ctx: commands.Context, item: str):
 
             rewards_text.append(f"🪙 {table['currency']:,} Bits")
 
-        # Give items
+        # Items
         for reward in table.get("items", []):
             cursor.execute("""
                 INSERT INTO inventory (user_id, item_name, quantity)
@@ -270,16 +286,14 @@ async def use(ctx: commands.Context, item: str):
         conn.close()
 
         await ctx.send(
-            f"📦 {item_title} Opened!\n" +
-            "\n".join(rewards_text)
+            f"📦 {item_title} Opened!\n" + "\n".join(rewards_text)
         )
 
     else:
         conn.close()
         await ctx.send(f"❓ {item_title} cannot be used yet.")
 
-# --- 5. START BOT ---
-
+# --- 7. START BOT ---
 if __name__ == "__main__":
     TOKEN = os.environ.get("DISCORD_TOKEN")
 
