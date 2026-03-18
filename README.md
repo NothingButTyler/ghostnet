@@ -1,6 +1,6 @@
 <p align="center">
-    <img src="https://github.com/nothingbuttyler/ghostnet/raw/main/Images/ghostnet-full.png#gh-dark-mode-only" width="380">
-    <img src="https://github.com/bloxstraplabs/bloxstrap/raw/main/Images/ghostnet-full-light#gh-light-mode-only" width="380">
+    <img src="https://github.com/nothingbuttyler/ghostnet/raw/main/Images/ghostnet-full-2.jpg#gh-dark-mode-only" width="380">
+    <img src="https://github.com/bloxstraplabs/bloxstrap/raw/main/Images/ghostnet-full-light.png#gh-light-mode-only" width="380">
 </p>
 
 <div align="center">
