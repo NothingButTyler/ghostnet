@@ -1,3 +1,10 @@
+<p align="center">
+    <img src="https://github.com/nothingbuttyler/ghostnet/raw/main/Images/ghostnet-full.png#gh-dark-mode-only" width="380">
+    <img src="https://github.com/bloxstraplabs/bloxstrap/raw/main/Images/ghostnet-full-light#gh-light-mode-only" width="380">
+</p>
+
+<div align="center">
+
 # GhostBot Official Repository
 
 [![Discord][discord-shield]][discord-url]
@@ -6,6 +13,8 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![Render][use-render-shield]][render-url] <br/>
+</div>
+
 A discord bot made primarily with Python.
 Coming soon! Instead, check out our website: https://ghostnet-bot.github.io
 ## Getting Started
