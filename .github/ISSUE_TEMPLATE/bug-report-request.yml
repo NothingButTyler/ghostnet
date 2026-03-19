@@ -38,15 +38,6 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: version
-    attributes:
-      label: GhostNet Version
-      description: Which version of the bot are you running? (e.g., v1.2.0)
-      placeholder: v...
-    validations:
-      required: true
-
   - type: dropdown
     id: platform
     attributes:
@@ -55,27 +46,21 @@ body:
       options:
         - Windows
         - Linux (Ubuntu/Debian)
-        - Docker
-        - Pterodactyl Panel
-        - Render
+        - MacOS
     validations:
       required: true
-
+      
   - type: textarea
-    id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant console logs here.
-      render: shell
-    validations:
-      required: false
+      label: Additional Comments
+      description: |
+        Is there anything else we should know about the bug?
+      placeholder: 'Example: There are multiple ways to activate...'
 
   - type: checkboxes
     id: checks
     attributes:
       label: Checklist
       options:
-        - label: I have checked the console for errors.
-          required: true
-        - label: I am running the latest version of GhostNet.
+        - label: I have checked to see if there have been any updates within 5 hours.
           required: true
