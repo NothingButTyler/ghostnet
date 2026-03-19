@@ -11,8 +11,11 @@
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
+[![Issues][issues-shield]][issues-url] <br/>
 [![Commits][commits-shield]][commits-url]
+[![Last Commit][last-commit-shield]][last-commit-url]
+[![discord.js][discord.js-shield]][discord.js-url]
+[![code language][code-language-shield]][code-language-url] 
 [![Render][use-render-shield]][render-url] <br/>
 </div>
 
@@ -48,6 +51,8 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=7289DA
 [discord-url]: https://discord.gg/Y2HMVgecQT
+[discord.js-shield]: https://img.shields.io/badge/discord.js-v14-5865F2?style=flat&logo=discord&logoColor=white
+[discord.js-url]: https://discord.js.org/
 [contributors-shield]: https://img.shields.io/github/contributors/nothingbuttyler/ghostnet?color=&logo=github
 [contributors-url]: https://github.com/NothingButTyler/ghostnet/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/nothingbuttyler/ghostnet?style=flat&logo=github
@@ -58,6 +63,10 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [issues-url]: https://github.com/nothingbuttyler/ghostnet/issues
 [commits-shield]: https://img.shields.io/github/commit-activity/m/nothingbuttyler/ghostnet?style=flat&logo=github&logoColor=white&label=commits&color=
 [commits-url]: https://github.com/nothingbuttyler/ghostnet/commits/main
+[code-language-shield]: https://img.shields.io/github/languages/top/nothingbuttyler/ghostnet?style=flat&color=light-green
+[code-language-url]: https://github.com/nothingbuttyler/ghostnet
+[last-commit-shield]: https://img.shields.io/github/last-commit/nothingbuttyler/ghostnet?style=flat&logo=github&logoColor=white&color=light-green&label=latest%20commit
+[last-commit-url]: https://github.com/nothingbuttyler/ghostnet/commits/main
 [use-render-shield]: https://img.shields.io/badge/HOSTED_USING_RENDER-ffffff?style=flat&logo=render&logoColor=black
 [render-shield]: https://img.shields.io/badge/RENDER-ffffff?style=flat&logo=render&logoColor=black
 [render-url]: https://render.com
