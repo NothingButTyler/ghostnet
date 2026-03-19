@@ -15,9 +15,9 @@
 [![Issues Closed][issues-closed-shield]][issues-url]
 [![Commits][commits-shield]][commits-url] <br/>
 [![Last Commit][last-commit-shield]][last-commit-url]
-[![Python][python-shield]][python-url]
 [![Discord][discord-shield]][discord-url]
 [![discord.js][discord.js-shield]][discord.js-url]
+[![Python][python-shield]][python-url]
 [![code language][code-language-shield]][code-language-url] 
 [![Render][use-render-shield]][render-url] <br/>
 </div>
