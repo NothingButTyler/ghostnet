@@ -11,7 +11,9 @@
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url] <br/>
+[![Issues][issues-shield]][issues-url] 
+[![Issues Closed][issues-closed-shield]][issues-url]<br/>
+[![Pulls][pulls-shield]][pulls-url]
 [![Commits][commits-shield]][commits-url]
 [![Last Commit][last-commit-shield]][last-commit-url]
 [![discord.js][discord.js-shield]][discord.js-url]
@@ -61,6 +63,9 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [stars-url]: https://github.com/nothingbuttyler/ghostnet/stargazers
 [issues-shield]: https://img.shields.io/github/issues/nothingbuttyler/ghostnet?style=flat
 [issues-url]: https://github.com/nothingbuttyler/ghostnet/issues
+[issues-closed-shield]: https://img.shields.io/github/issues-closed-raw/nothingbuttyler/ghostnet?style=flat&color=&label=issues%20closed
+[pulls-shield]: https://img.shields.io/github/issues-pr/nothingbuttyler/ghostnet?style=flat&color=&label=Pull%20Requests
+[pulls-url]: https://github.com/nothingbuttyler/ghostnet/pulls
 [commits-shield]: https://img.shields.io/github/commit-activity/m/nothingbuttyler/ghostnet?style=flat&logo=github&logoColor=white&label=commits&color=
 [commits-url]: https://github.com/nothingbuttyler/ghostnet/commits/main
 [code-language-shield]: https://img.shields.io/github/languages/top/nothingbuttyler/ghostnet?style=flat&color=light-green
