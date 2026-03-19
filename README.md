@@ -49,7 +49,7 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=7289DA
+[discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=5865F2
 [discord-url]: https://discord.gg/Y2HMVgecQT
 [discord.js-shield]: https://img.shields.io/badge/discord.js-v14-5865F2?style=flat&logo=discord&logoColor=white
 [discord.js-url]: https://discord.js.org/
