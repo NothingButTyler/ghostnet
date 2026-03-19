@@ -12,6 +12,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
+[![Commits][commits-shield]][commits-url]
 [![Render][use-render-shield]][render-url] <br/>
 </div>
 
@@ -55,6 +56,8 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [stars-url]: https://github.com/nothingbuttyler/ghostnet/stargazers
 [issues-shield]: https://img.shields.io/github/issues/nothingbuttyler/ghostnet?style=flat
 [issues-url]: https://github.com/nothingbuttyler/ghostnet/issues
+[commits-shield]: https://img.shields.io/github/commit-activity/m/nothingbuttyler/ghostnet?style=flat&logo=github&logoColor=white&label=commits&color=
+[commits-url]: https://github.com/nothingbuttyler/ghostnet/commits/main
 [use-render-shield]: https://img.shields.io/badge/HOSTED_USING_RENDER-ffffff?style=flat&logo=render&logoColor=black
 [render-shield]: https://img.shields.io/badge/RENDER-ffffff?style=flat&logo=render&logoColor=black
 [render-url]: https://render.com
