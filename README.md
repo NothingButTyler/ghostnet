@@ -18,7 +18,8 @@
 [![Discord][discord-shield]][discord-url]
 [![discord.js][discord.js-shield]][discord.js-url]
 [![Python][python-shield]][python-url]
-[![code language][code-language-shield]][code-language-url] 
+[![code language][code-language-shield]][code-language-url]
+[![Builds][builds-shield]][builds-url]
 [![Render][use-render-shield]][render-url] <br/>
 </div>
 
@@ -58,6 +59,8 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [discord.js-url]: https://discord.js.org/style=flat&logo=discord&logoColor=white
 [python-shield]: https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white
 [python-url]: https://www.python.org/
+[builds-shield]: https://img.shields.io/github/actions/workflow/status/nothingbuttyler/ghostnet/python-app.yml?branch=main&style=flat&color=&label=build
+[builds-url]: https://github.com/nothingbuttyler/ghostnet/actions
 [contributors-shield]: https://img.shields.io/github/contributors/nothingbuttyler/ghostnet?color=&logo=github
 [contributors-url]: https://github.com/NothingButTyler/ghostnet/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/nothingbuttyler/ghostnet?style=flat&logo=github
