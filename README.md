@@ -7,15 +7,16 @@
 
 # GhostBot Official Repository
 
-[![Discord][discord-shield]][discord-url]
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url] 
-[![Issues Closed][issues-closed-shield]][issues-url]<br/>
+[![Issues][issues-shield]][issues-url]
 [![Pulls][pulls-shield]][pulls-url]
-[![Commits][commits-shield]][commits-url]
+[![Issues Closed][issues-closed-shield]][issues-url]
+[![Commits][commits-shield]][commits-url] <br/>
 [![Last Commit][last-commit-shield]][last-commit-url]
+[![Python][python-shield]][python-url]
+[![Discord][discord-shield]][discord-url]
 [![discord.js][discord.js-shield]][discord.js-url]
 [![code language][code-language-shield]][code-language-url] 
 [![Render][use-render-shield]][render-url] <br/>
@@ -51,10 +52,12 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=5865F2
+[discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=5865F2&logoColor=white
 [discord-url]: https://discord.gg/Y2HMVgecQT
 [discord.js-shield]: https://img.shields.io/badge/discord.js-v14-5865F2?style=flat&logo=discord&logoColor=white
-[discord.js-url]: https://discord.js.org/
+[discord.js-url]: https://discord.js.org/style=flat&logo=discord&logoColor=white
+[python-shield]: https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white
+[python-url]: https://www.python.org/
 [contributors-shield]: https://img.shields.io/github/contributors/nothingbuttyler/ghostnet?color=&logo=github
 [contributors-url]: https://github.com/NothingButTyler/ghostnet/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/nothingbuttyler/ghostnet?style=flat&logo=github
