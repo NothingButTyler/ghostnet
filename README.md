@@ -59,7 +59,7 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [discord.js-url]: https://discord.js.org/style=flat&logo=discord&logoColor=white
 [python-shield]: https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white
 [python-url]: https://www.python.org/
-[builds-shield]: https://img.shields.io/github/actions/workflow/status/nothingbuttyler/ghostnet/python-app.yml?branch=main&style=flat&color=&label=build
+[builds-shield]: https://img.shields.io/github/actions/workflow/status/nothingbuttyler/ghostnet/python-app.yml?branch=main&style=flat&label=build
 [builds-url]: https://github.com/nothingbuttyler/ghostnet/actions
 [contributors-shield]: https://img.shields.io/github/contributors/nothingbuttyler/ghostnet?color=&logo=github
 [contributors-url]: https://github.com/NothingButTyler/ghostnet/graphs/contributors
