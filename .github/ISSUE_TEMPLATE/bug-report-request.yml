@@ -8,7 +8,7 @@ body:
       value: |
 
         Before opening a new issue, make sure it isn't covered by an existing issue.
-        Please search for [issues with the `new icon` label](https://github.com/nothingbuttyler/ghostnet/issues?q=is%3Aissue+label%3A%22new+bug%22)
+        Please search for [issues with the `new bug` label](https://github.com/nothingbuttyler/ghostnet/issues?q=is%3Aissue+label%3A%22new+bug%22)
         (including closed issues) before you continue. If you find one for the brand
         you're requesting then leave a comment on it or add a reaction.
 
