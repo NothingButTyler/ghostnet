@@ -21,9 +21,17 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # We need this for the Dry Run test below
+        pip install pytest-timeout 
 
     - name: Lint with flake8
       run: |
         pip install flake8
-        # stop the build if there are Python syntax errors or undefined names
+        # Catch syntax errors and undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Bot Dry Run (Check for Command Errors)
+      run: |
+        # This tries to run your main.py for 5 seconds. 
+        # If it crashes because of a bad /command, the build fails.
+        timeout 5s python main.py || code=$?; if [ $code -ne 124 ] && [ $code -ne 0 ]; then exit 1; fi
