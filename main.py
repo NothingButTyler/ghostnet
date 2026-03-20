@@ -229,7 +229,7 @@ async def inventory(ctx: commands.Context):
 @bot.hybrid_command(name="use", description="Use an item")
 @app_commands.autocomplete(item=item_autocomplete)
 async def use(ctx: commands.Context, item: str):
-    await ctx.defer(ephemeral=False)
+    await ctx.defer(thinking=True)
 
     user_id = ctx.author.id
     item_title = item.title()
