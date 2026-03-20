@@ -238,15 +238,38 @@ async def use(ctx: commands.Context, item: str):
         conn = sqlite3.connect("economy.db")
         cursor = conn.cursor()
 
-        # Check inventory
-        cursor.execute("""
-            SELECT quantity
-            FROM inventory
-            WHERE user_id = ? AND item_name = ?
-        """, (user_id, item_title))
+# ❓ Check if item exists at all
+if item_title not in LOOT_TABLES:
+    conn.close()
 
-        res = cursor.fetchone()
+    embed = discord.Embed(
+        title="❓ Unknown Item",
+        description=f"**{item_title}** does not exist.",
+        color=0xffa500
+    )
 
+    return await ctx.send(embed=embed)
+
+# Now check inventory
+cursor.execute("""
+    SELECT quantity
+    FROM inventory
+    WHERE user_id = ? AND item_name = ?
+""", (user_id, item_title))
+
+res = cursor.fetchone()
+
+# ❌ User doesn't have it
+if not res or res[0] <= 0:
+    conn.close()
+
+    embed = discord.Embed(
+        title="❌ Item Not Found",
+        description=f"You don’t have **{item_title}**.",
+        color=0xff0000
+    )
+
+    return await ctx.send(embed=embed)
         # ❌ User doesn't have item
         if not res or res[0] <= 0:
             conn.close()
