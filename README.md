@@ -11,12 +11,12 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![Pulls][pulls-shield]][pulls-url]
+[![Pulls][pulls-shield]][pulls-url] <br/>
 [![Issues Closed][issues-closed-shield]][issues-url]
-[![Commits][commits-shield]][commits-url] <br/>
+[![Commits][commits-shield]][commits-url]
 [![Last Commit][last-commit-shield]][last-commit-url]
 [![Discord][discord-shield]][discord-url]
-[![discord.js][discord.js-shield]][discord.js-url]
+[![discord.js][discord.js-shield]][discord.js-url]  <br/>
 [![Python][python-shield]][python-url]
 [![code language][code-language-shield]][code-language-url]
 [![Builds][builds-shield]][builds-url]
@@ -83,3 +83,4 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [render-url]: https://render.com
 [uptimerobot-shield]: https://img.shields.io/badge/UPTIMEROBOT-ffffff?style-flat&color=green
 [uptimerobot-url]: https://uptimerobot.com
+[uptimerobot-status-shield]: https://img.shields.io/uptimerobot/status/m781234567djhf812312ewadsd3hr83hd2f3yf8983f9183yd9813y98ry398ry1398yr?style=flat&logo=uptimerobot&logoColor=white&label=status&color=46E3B7
