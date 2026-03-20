@@ -14,7 +14,8 @@
 [![Issues Closed][issues-closed-shield]][issues-url]
 [![Issues][issues-shield]][issues-url]
 [![Commits][commits-shield]][commits-url]
-[![Last Commit][last-commit-shield]][last-commit-url]  <br/>
+[![Last Commit][last-commit-shield]][last-commit-url]
+[![Uptimerobot Status][uptimerobot-status-shield]][uptimerobot-url]<br/>
 [![Discord][discord-shield]][discord-url]
 [![discord.js][discord.js-shield]][discord.js-url]
 [![Python][python-shield]][python-url]
