@@ -14,9 +14,9 @@
 [![Pulls][pulls-shield]][pulls-url] <br/>
 [![Issues Closed][issues-closed-shield]][issues-url]
 [![Commits][commits-shield]][commits-url]
-[![Last Commit][last-commit-shield]][last-commit-url]
+[![Last Commit][last-commit-shield]][last-commit-url]  <br/>
 [![Discord][discord-shield]][discord-url]
-[![discord.js][discord.js-shield]][discord.js-url]  <br/>
+[![discord.js][discord.js-shield]][discord.js-url]
 [![Python][python-shield]][python-url]
 [![code language][code-language-shield]][code-language-url]
 [![Builds][builds-shield]][builds-url]
