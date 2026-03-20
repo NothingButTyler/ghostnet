@@ -228,11 +228,12 @@ async def inventory(ctx: commands.Context):
 @bot.hybrid_command(name="use", description="Use an item")
 @app_commands.autocomplete(item=item_autocomplete)
 async def use(ctx: commands.Context, item: str):
-    await ctx.defer(thinking=True)
-
     try:
         user_id = ctx.author.id
         item_title = item.strip().title()
+
+        # ✅ PROPER DEFER (fixes timeout bug)
+        await ctx.interaction.response.defer(thinking=True)
 
         conn = sqlite3.connect("economy.db")
         cursor = conn.cursor()
@@ -256,7 +257,7 @@ async def use(ctx: commands.Context, item: str):
                 color=0xff0000
             )
 
-            return await ctx.send(embed=embed)
+            return await ctx.interaction.followup.send(embed=embed)
 
         # 📦 Valid loot table item
         if item_title in LOOT_TABLES:
@@ -302,9 +303,9 @@ async def use(ctx: commands.Context, item: str):
                 color=0xffa500
             )
 
-            return await ctx.send(embed=embed)
+            return await ctx.interaction.followup.send(embed=embed)
 
-        # ❓ Item not usable / doesn't exist
+        # ❓ Item not usable
         else:
             conn.close()
 
@@ -314,7 +315,7 @@ async def use(ctx: commands.Context, item: str):
                 color=0xffa500
             )
 
-            return await ctx.send(embed=embed)
+            return await ctx.interaction.followup.send(embed=embed)
 
     except Exception as e:
         print(f"ERROR in /use: {e}")
@@ -325,7 +326,10 @@ async def use(ctx: commands.Context, item: str):
             color=0xff0000
         )
 
-        await ctx.send(embed=embed)
+        try:
+            await ctx.interaction.followup.send(embed=embed)
+        except:
+            pass
 
 # --- 7. START BOT ---
 if __name__ == "__main__":
