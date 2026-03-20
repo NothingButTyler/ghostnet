@@ -228,131 +228,99 @@ async def inventory(ctx: commands.Context):
 @bot.hybrid_command(name="use", description="Use an item")
 @app_commands.autocomplete(item=item_autocomplete)
 async def use(ctx: commands.Context, item: str):
+    await ctx.defer(thinking=True)
+
     try:
         user_id = ctx.author.id
         item_title = item.strip().title()
 
-        # ✅ PROPER DEFER (fixes timeout bug)
-        await ctx.interaction.response.defer(thinking=True)
-
         conn = sqlite3.connect("economy.db")
         cursor = conn.cursor()
 
-# ❓ Check if item exists at all
-if item_title not in LOOT_TABLES:
-    conn.close()
+        # ❓ Check if item exists FIRST
+        if item_title not in LOOT_TABLES:
+            conn.close()
 
-    embed = discord.Embed(
-        title="❓ Unknown Item",
-        description=f"**{item_title}** does not exist.",
-        color=0xffa500
-    )
+            embed = discord.Embed(
+                title="❓ Unknown Item",
+                description=f"**{item_title}** does not exist.",
+                color=0xffa500
+            )
 
-    return await ctx.send(embed=embed)
+            return await ctx.send(embed=embed)
 
-# Now check inventory
-cursor.execute("""
-    SELECT quantity
-    FROM inventory
-    WHERE user_id = ? AND item_name = ?
-""", (user_id, item_title))
+        # Check inventory
+        cursor.execute("""
+            SELECT quantity
+            FROM inventory
+            WHERE user_id = ? AND item_name = ?
+        """, (user_id, item_title))
 
-res = cursor.fetchone()
+        res = cursor.fetchone()
 
-# ❌ User doesn't have it
-if not res or res[0] <= 0:
-    conn.close()
-
-    embed = discord.Embed(
-        title="❌ Item Not Found",
-        description=f"You don’t have **{item_title}**.",
-        color=0xff0000
-    )
-
-    return await ctx.send(embed=embed)
-        # ❌ User doesn't have item
+        # ❌ User doesn't have it
         if not res or res[0] <= 0:
             conn.close()
 
             embed = discord.Embed(
                 title="❌ Item Not Found",
-                description=f"You don’t have **{item_title}** in your inventory.",
+                description=f"You don’t have **{item_title}**.",
                 color=0xff0000
             )
 
-            return await ctx.interaction.followup.send(embed=embed)
+            return await ctx.send(embed=embed)
 
-        # 📦 Valid loot table item
-        if item_title in LOOT_TABLES:
-            table = LOOT_TABLES[item_title]
+        # 📦 Use item
+        table = LOOT_TABLES[item_title]
 
-            # Remove item
+        cursor.execute("""
+            UPDATE inventory
+            SET quantity = quantity - 1
+            WHERE user_id = ? AND item_name = ?
+        """, (user_id, item_title))
+
+        rewards_text = []
+
+        if "currency" in table:
             cursor.execute("""
-                UPDATE inventory
-                SET quantity = quantity - 1
-                WHERE user_id = ? AND item_name = ?
-            """, (user_id, item_title))
+                UPDATE users
+                SET balance = balance + ?
+                WHERE user_id = ?
+            """, (table["currency"], user_id))
 
-            rewards_text = []
+            rewards_text.append(f"🪙 {table['currency']:,} Bits")
 
-            # Currency reward
-            if "currency" in table:
-                cursor.execute("""
-                    UPDATE users
-                    SET balance = balance + ?
-                    WHERE user_id = ?
-                """, (table["currency"], user_id))
+        for reward in table.get("items", []):
+            cursor.execute("""
+                INSERT INTO inventory (user_id, item_name, quantity)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id, item_name)
+                DO UPDATE SET quantity = quantity + ?
+            """, (user_id, reward["name"], reward["amount"], reward["amount"]))
 
-                rewards_text.append(f"🪙 {table['currency']:,} Bits")
+            rewards_text.append(f"📦 {reward['amount']}x {reward['name']}")
 
-            # Item rewards
-            for reward in table.get("items", []):
-                cursor.execute("""
-                    INSERT INTO inventory (user_id, item_name, quantity)
-                    VALUES (?, ?, ?)
-                    ON CONFLICT(user_id, item_name)
-                    DO UPDATE SET quantity = quantity + ?
-                """, (user_id, reward["name"], reward["amount"], reward["amount"]))
+        conn.commit()
+        conn.close()
 
-                rewards_text.append(f"📦 {reward['amount']}x {reward['name']}")
+        embed = discord.Embed(
+            title=f"📦 {item_title} Opened!",
+            description="\n".join(rewards_text),
+            color=0xffa500
+        )
 
-            conn.commit()
-            conn.close()
-
-            # ✅ Success embed
-            embed = discord.Embed(
-                title=f"📦 {item_title} Opened!",
-                description="\n".join(rewards_text),
-                color=0xffa500
-            )
-
-            return await ctx.interaction.followup.send(embed=embed)
-
-        # ❓ Item not usable
-        else:
-            conn.close()
-
-            embed = discord.Embed(
-                title="❓ Unknown Item",
-                description=f"**{item_title}** does not exist or cannot be used.",
-                color=0xffa500
-            )
-
-            return await ctx.interaction.followup.send(embed=embed)
+        return await ctx.send(embed=embed)
 
     except Exception as e:
         print(f"ERROR in /use: {e}")
 
         embed = discord.Embed(
             title="⚠️ Error",
-            description="Something went wrong while using that item.",
+            description="Something went wrong.",
             color=0xff0000
         )
 
-        try:
-            await ctx.interaction.followup.send(embed=embed)
-        except:
-            pass
+        return await ctx.send(embed=embed)
 
 # --- 7. START BOT ---
 if __name__ == "__main__":
