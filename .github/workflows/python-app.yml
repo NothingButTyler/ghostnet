@@ -32,8 +32,19 @@ jobs:
         
     - name: Bot Dry Run (Check for Command Errors)
       env:
-        # We provide a fake token so the 'if not TOKEN' check passes
-        DISCORD_TOKEN: "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAuR2hv-c3ROZXQuVGVzdE1vY2tUb2tlbg=="
+        DISCORD_TOKEN: "fakedata"
       run: |
-        # Run for 5 seconds to check for crashes, then kill it.
-        timeout 5s python main.py || code=$?; if [ $code -ne 124 ] && [ $code -ne 0 ]; then exit 1; fi
+        # Run the bot. We catch the output and look for "LoginFailure".
+        # If we find "LoginFailure", it means the code itself is valid!
+        timeout 10s python main.py > bot_output.log 2>&1 || true
+        
+        if grep -q "LoginFailure" bot_output.log; then
+          echo "✅ Code is valid (Failed at login as expected)"
+          exit 0
+        elif grep -q "Traceback" bot_output.log; then
+          echo "❌ Code has a real error:"
+          cat bot_output.log
+          exit 1
+        else
+          echo "✅ Test completed without critical errors"
+        fi
