@@ -232,11 +232,12 @@ async def use(ctx: commands.Context, item: str):
 
     try:
         user_id = ctx.author.id
-        item_title = item.title()
+        item_title = item.strip().title()
 
         conn = sqlite3.connect("economy.db")
         cursor = conn.cursor()
 
+        # Check inventory
         cursor.execute("""
             SELECT quantity
             FROM inventory
@@ -245,10 +246,19 @@ async def use(ctx: commands.Context, item: str):
 
         res = cursor.fetchone()
 
+        # ❌ User doesn't have item
         if not res or res[0] <= 0:
             conn.close()
-            return await ctx.send(f"❌ You don't have a {item_title}!")
 
+            embed = discord.Embed(
+                title="❌ Item Not Found",
+                description=f"You don’t have **{item_title}** in your inventory.",
+                color=0xff0000
+            )
+
+            return await ctx.send(embed=embed)
+
+        # 📦 Valid loot table item
         if item_title in LOOT_TABLES:
             table = LOOT_TABLES[item_title]
 
@@ -261,7 +271,7 @@ async def use(ctx: commands.Context, item: str):
 
             rewards_text = []
 
-            # Currency
+            # Currency reward
             if "currency" in table:
                 cursor.execute("""
                     UPDATE users
@@ -271,7 +281,7 @@ async def use(ctx: commands.Context, item: str):
 
                 rewards_text.append(f"🪙 {table['currency']:,} Bits")
 
-            # Items
+            # Item rewards
             for reward in table.get("items", []):
                 cursor.execute("""
                     INSERT INTO inventory (user_id, item_name, quantity)
@@ -285,17 +295,37 @@ async def use(ctx: commands.Context, item: str):
             conn.commit()
             conn.close()
 
-            await ctx.send(
-                f"📦 {item_title} Opened!\n" + "\n".join(rewards_text)
+            # ✅ Success embed
+            embed = discord.Embed(
+                title=f"📦 {item_title} Opened!",
+                description="\n".join(rewards_text),
+                color=0xffa500
             )
 
+            return await ctx.send(embed=embed)
+
+        # ❓ Item not usable / doesn't exist
         else:
             conn.close()
-            await ctx.send(f"❓ {item_title} cannot be used yet.")
+
+            embed = discord.Embed(
+                title="❓ Unknown Item",
+                description=f"**{item_title}** does not exist or cannot be used.",
+                color=0xffa500
+            )
+
+            return await ctx.send(embed=embed)
 
     except Exception as e:
         print(f"ERROR in /use: {e}")
-        await ctx.send("❌ Something went wrong while using that item.")
+
+        embed = discord.Embed(
+            title="⚠️ Error",
+            description="Something went wrong while using that item.",
+            color=0xff0000
+        )
+
+        await ctx.send(embed=embed)
 
 # --- 7. START BOT ---
 if __name__ == "__main__":
