@@ -225,73 +225,77 @@ async def inventory(ctx: commands.Context):
 
     await ctx.send(embed=embed)
 
-# --- 🔥 USE COMMAND WITH AUTOCOMPLETE + LOOT TABLE ---
 @bot.hybrid_command(name="use", description="Use an item")
 @app_commands.autocomplete(item=item_autocomplete)
 async def use(ctx: commands.Context, item: str):
     await ctx.defer(thinking=True)
 
-    user_id = ctx.author.id
-    item_title = item.title()
+    try:
+        user_id = ctx.author.id
+        item_title = item.title()
 
-    conn = sqlite3.connect("economy.db")
-    cursor = conn.cursor()
+        conn = sqlite3.connect("economy.db")
+        cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT quantity
-        FROM inventory
-        WHERE user_id = ? AND item_name = ?
-    """, (user_id, item_title))
-
-    res = cursor.fetchone()
-
-    if not res or res[0] <= 0:
-        conn.close()
-        return await ctx.send(f"❌ You don't have a {item_title}!")
-
-    if item_title in LOOT_TABLES:
-        table = LOOT_TABLES[item_title]
-
-        # Remove used item
         cursor.execute("""
-            UPDATE inventory
-            SET quantity = quantity - 1
+            SELECT quantity
+            FROM inventory
             WHERE user_id = ? AND item_name = ?
         """, (user_id, item_title))
 
-        rewards_text = []
+        res = cursor.fetchone()
 
-        # Currency
-        if "currency" in table:
+        if not res or res[0] <= 0:
+            conn.close()
+            return await ctx.send(f"❌ You don't have a {item_title}!")
+
+        if item_title in LOOT_TABLES:
+            table = LOOT_TABLES[item_title]
+
+            # Remove item
             cursor.execute("""
-                UPDATE users
-                SET balance = balance + ?
-                WHERE user_id = ?
-            """, (table["currency"], user_id))
+                UPDATE inventory
+                SET quantity = quantity - 1
+                WHERE user_id = ? AND item_name = ?
+            """, (user_id, item_title))
 
-            rewards_text.append(f"🪙 {table['currency']:,} Bits")
+            rewards_text = []
 
-        # Items
-        for reward in table.get("items", []):
-            cursor.execute("""
-                INSERT INTO inventory (user_id, item_name, quantity)
-                VALUES (?, ?, ?)
-                ON CONFLICT(user_id, item_name)
-                DO UPDATE SET quantity = quantity + ?
-            """, (user_id, reward["name"], reward["amount"], reward["amount"]))
+            # Currency
+            if "currency" in table:
+                cursor.execute("""
+                    UPDATE users
+                    SET balance = balance + ?
+                    WHERE user_id = ?
+                """, (table["currency"], user_id))
 
-            rewards_text.append(f"📦 {reward['amount']}x {reward['name']}")
+                rewards_text.append(f"🪙 {table['currency']:,} Bits")
 
-        conn.commit()
-        conn.close()
+            # Items
+            for reward in table.get("items", []):
+                cursor.execute("""
+                    INSERT INTO inventory (user_id, item_name, quantity)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(user_id, item_name)
+                    DO UPDATE SET quantity = quantity + ?
+                """, (user_id, reward["name"], reward["amount"], reward["amount"]))
 
-        await ctx.send(
-            f"📦 {item_title} Opened!\n" + "\n".join(rewards_text)
-        )
+                rewards_text.append(f"📦 {reward['amount']}x {reward['name']}")
 
-    else:
-        conn.close()
-        await ctx.send(f"❓ {item_title} cannot be used yet.")
+            conn.commit()
+            conn.close()
+
+            await ctx.send(
+                f"📦 {item_title} Opened!\n" + "\n".join(rewards_text)
+            )
+
+        else:
+            conn.close()
+            await ctx.send(f"❓ {item_title} cannot be used yet.")
+
+    except Exception as e:
+        print(f"ERROR in /use: {e}")
+        await ctx.send("❌ Something went wrong while using that item.")
 
 # --- 7. START BOT ---
 if __name__ == "__main__":
