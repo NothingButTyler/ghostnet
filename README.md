@@ -10,9 +10,9 @@
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
 [![Pulls][pulls-shield]][pulls-url] <br/>
 [![Issues Closed][issues-closed-shield]][issues-url]
+[![Issues][issues-shield]][issues-url]
 [![Commits][commits-shield]][commits-url]
 [![Last Commit][last-commit-shield]][last-commit-url]  <br/>
 [![Discord][discord-shield]][discord-url]
