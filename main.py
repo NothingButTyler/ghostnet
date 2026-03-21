@@ -67,10 +67,10 @@ class GhostNet(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
         super().__init__(
-            command_prefix=commands.when_mentioned_or("net ", "net")
-            intents=intents,
-            case_insensitive=True
-        )
+    command_prefix=commands.when_mentioned_or("net ", "net"),
+    intents=intents,
+    case_insensitive=True
+)
 
     async def setup_hook(self):
         init_db()
