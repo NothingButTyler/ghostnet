@@ -52,6 +52,10 @@ See also the list of [contributors](https://github.com/nothingbuttyler/ghostnet/
 ## Self hosting the bot
 We are not supporting/encouraging self hosting this bot. The code is here because we use Github to store our code, and so you know there isn't anything suspicious.
 
+## Roadmap
+
+- [x] Add shields to readme.md
+
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=5865F2&logoColor=white
