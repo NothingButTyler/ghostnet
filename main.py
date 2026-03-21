@@ -67,7 +67,7 @@ class GhostNet(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
         super().__init__(
-            command_prefix=["net ", "Net ", "NET "],
+            command_prefix=commands.when_mentioned_or("net ", "net")
             intents=intents,
             case_insensitive=True
         )
@@ -321,6 +321,64 @@ async def use(ctx: commands.Context, item: str):
         )
 
         return await ctx.send(embed=embed)
+
+class HelpSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label="All", description="Show all commands", emoji="📖"),
+            discord.SelectOption(label="Currency", description="Money commands", emoji="💰"),
+            discord.SelectOption(label="Config", description="Bot settings", emoji="⚙️"),
+        ]
+
+        super().__init__(placeholder="Choose a category...", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        category = self.values[0]
+
+        if category == "All":
+            embed = discord.Embed(title="📖 All Commands", color=0x00bfff)
+            embed.description = (
+                "`/daily`\n"
+                "`/balance`\n"
+                "`/inventory`\n"
+                "`/use`\n"
+                "`/help`"
+            )
+
+        elif category == "Currency":
+            embed = discord.Embed(title="💰 Currency Commands", color=0x00bfff)
+            embed.description = (
+                "`/daily` — Claim daily bits\n"
+                "`/balance` — Check balance"
+            )
+
+        elif category == "Config":
+            embed = discord.Embed(title="⚙️ Config Commands", color=0x00bfff)
+            embed.description = (
+                "`/help` — Show help menu\n"
+                # add more config commands here later
+            )
+
+        await interaction.response.edit_message(embed=embed)
+
+
+class HelpView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(HelpSelect())
+
+
+@bot.hybrid_command(name="help", description="View all commands")
+async def help_command(ctx: commands.Context):
+    await ctx.defer(thinking=True)
+
+    embed = discord.Embed(
+        title="📖 GhostNet Help",
+        description="Select a category below 👇",
+        color=0x00bfff
+    )
+
+    await ctx.send(embed=embed, view=HelpView())
 
 # --- 7. START BOT ---
 if __name__ == "__main__":
