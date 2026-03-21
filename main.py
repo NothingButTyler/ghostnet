@@ -202,7 +202,7 @@ async def balance(ctx: commands.Context):
     aliases=["inv"],
     description="View your items"
 )
-async def inventory(ctx: commands.Context):2
+async def inventory(ctx: commands.Context):
     await ctx.defer()
 
     conn = sqlite3.connect("economy.db")
