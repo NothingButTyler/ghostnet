@@ -185,19 +185,18 @@ async def daily(ctx: commands.Context):
     aliases=["bal"],
     description="Check your bits"
 )
+async def balance(ctx: commands.Context):
     await ctx.defer()
 
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
-
     cursor.execute("SELECT balance FROM users WHERE user_id = ?", (ctx.author.id,))
     res = cursor.fetchone()
-
     conn.close()
 
     bal = res[0] if res else 0
     await ctx.send(f"🪙 {ctx.author.display_name}, you have {bal:,} bits.")
-
+    
 @bot.hybrid_command(
     name="inventory",
     aliases=["inv"],
