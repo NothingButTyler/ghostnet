@@ -180,8 +180,11 @@ async def daily(ctx: commands.Context):
 
     await ctx.send(embed=embed)
 
-@bot.hybrid_command(name="balance", description="Check your bits")
-async def balance(ctx: commands.Context):
+@bot.hybrid_command(
+    name="balance",
+    aliases=["bal"],
+    description="Check your bits"
+)
     await ctx.defer()
 
     conn = sqlite3.connect("economy.db")
