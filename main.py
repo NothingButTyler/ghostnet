@@ -195,8 +195,12 @@ async def balance(ctx: commands.Context):
     bal = res[0] if res else 0
     await ctx.send(f"🪙 {ctx.author.display_name}, you have {bal:,} bits.")
 
-@bot.hybrid_command(name="inventory", description="View items")
-async def inventory(ctx: commands.Context):
+@bot.hybrid_command(
+    name="inventory",
+    aliases=["inv"],
+    description="View your items"
+)
+async def inventory(ctx: commands.Context):2
     await ctx.defer()
 
     conn = sqlite3.connect("economy.db")
