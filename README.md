@@ -61,7 +61,7 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 [discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=5865F2&logoColor=white
 [discord-url]: https://discord.gg/Y2HMVgecQT
 [discord.js-shield]: https://img.shields.io/badge/discord.js-v14-5865F2?style=flat&logo=discord&logoColor=white
-[discord.js-url]: https://discord.js.org/style=flat&logo=discord&logoColor=white
+[discord.js-url]: https://discord.js.org/
 [python-shield]: https://img.shields.io/badge/python-3.10+-3776AB?style=flat&logo=python&logoColor=white
 [python-url]: https://www.python.org/
 [builds-shield]: https://img.shields.io/github/actions/workflow/status/nothingbuttyler/ghostnet/python-app.yml?branch=main&style=flat&label=builds
