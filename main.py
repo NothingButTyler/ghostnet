@@ -6,8 +6,8 @@ import os
 import pytz
 from datetime import datetime, timedelta
 
-# NEW (LOGIN SYSTEM)
-from flask import Flask, redirect, request, jsonify
+# --- FLASK / LOGIN ---
+from flask import Flask, redirect, request
 import urllib.parse
 import threading
 import requests
@@ -15,8 +15,8 @@ import requests
 # -------------------------
 # 🔐 DISCORD OAUTH CONFIG
 # -------------------------
-CLIENT_ID = "1453941722324402327"
-CLIENT_SECRET = "HL5CANRcoDXsQN94cxqfbITi7foGn5Vl"
+CLIENT_ID = "YOUR_CLIENT_ID"
+CLIENT_SECRET = "YOUR_SECRET"  # 🔥 REPLACE THIS
 REDIRECT_URI = "https://ghostnet-0p4u.onrender.com/login-callback"
 
 # -------------------------
@@ -26,11 +26,11 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "GhostNet API is running."
+    return "GhostNet API running"
 
 @app.route("/login")
 def login():
-    discord_url = (
+    url = (
         "https://discord.com/api/oauth2/authorize?"
         + urllib.parse.urlencode({
             "client_id": CLIENT_ID,
@@ -39,7 +39,7 @@ def login():
             "scope": "identify guilds"
         })
     )
-    return redirect(discord_url)
+    return redirect(url)
 
 @app.route("/login-callback")
 def login_callback():
@@ -53,21 +53,25 @@ def login_callback():
         "redirect_uri": REDIRECT_URI
     }
 
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-    r = requests.post("https://discord.com/api/oauth2/token", data=data, headers=headers)
-    token_json = r.json()
+    token = requests.post(
+        "https://discord.com/api/oauth2/token",
+        data=data,
+        headers=headers
+    ).json()
 
-    access_token = token_json.get("access_token")
+    access_token = token.get("access_token")
 
     user = requests.get(
         "https://discord.com/api/users/@me",
         headers={"Authorization": f"Bearer {access_token}"}
     ).json()
 
-    return jsonify(user)
+    # redirect to dashboard
+    return redirect(
+        f"https://ghostnet-bot.github.io/?username={user['username']}&avatar={user['id']}/{user['avatar']}"
+    )
 
 # -------------------------
 # 🧠 DATABASE
@@ -98,12 +102,12 @@ def init_db():
     conn.close()
 
 # -------------------------
-# 🤖 BOT SETUP
+# 🤖 BOT
 # -------------------------
 class GhostNet(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix=commands.when_mentioned_or("net "),
+            command_prefix=commands.when_mentioned_or("net ", "net"),
             intents=discord.Intents.all(),
             help_command=None
         )
