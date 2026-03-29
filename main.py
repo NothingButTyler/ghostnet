@@ -70,7 +70,7 @@ def login_callback():
 
     # redirect to dashboard
     return redirect(
-        f"https://ghostnet-bot.github.io/?username={user['username']}&avatar={user['id']}/{user['avatar']}"
+        f"https://ghostnet-bot.github.io/dashboard?username={user['username']}&avatar={user['id']}/{user['avatar']}"
     )
 
 # -------------------------
