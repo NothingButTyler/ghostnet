@@ -179,3 +179,5 @@ if __name__ == "__main__":
 
     TOKEN = os.environ.get("DISCORD_TOKEN")
     bot.run(TOKEN)
+
+# note to br3h: if any of the commands got removed, that's chatgpt's fault since we were working on the website on the chatgpt gc - tyler
