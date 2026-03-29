@@ -16,7 +16,7 @@ import requests
 # 🔐 DISCORD OAUTH CONFIG
 # -------------------------
 CLIENT_ID = "1453941722324402327"
-CLIENT_SECRET = "HL5CANRcoDXsQN94cxqfbITi7foGn5Vl"  # 🔥 REPLACE THIS
+CLIENT_SECRET = "HL5CANRcoDXsQN94cxqfbITi7foGn5Vl" 
 REDIRECT_URI = "https://ghostnet-0p4u.onrender.com/login-callback"
 
 # -------------------------
