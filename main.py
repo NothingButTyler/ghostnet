@@ -181,3 +181,5 @@ if __name__ == "__main__":
     bot.run(TOKEN)
 
 # note to br3h: if any of the commands got removed, that's chatgpt's fault since we were working on the website on the chatgpt gc - tyler
+    #replied to tyler:
+    #just make a new chatgpt gc
