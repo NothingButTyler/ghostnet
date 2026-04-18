@@ -15,8 +15,8 @@ import requests
 # -------------------------
 # 🔐 DISCORD OAUTH CONFIG
 # -------------------------
-CLIENT_ID = "1453941722324402327"
-CLIENT_SECRET = "HL5CANRcoDXsQN94cxqfbITi7foGn5Vl" 
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REDIRECT_URI = "https://ghostnet-0p4u.onrender.com/login-callback"
 
 # -------------------------
@@ -61,16 +61,24 @@ def login_callback():
         headers=headers
     ).json()
 
+    print("TOKEN RESPONSE:", token)  # 🔥 DEBUG
+
     access_token = token.get("access_token")
+
+    # ❌ If OAuth failed, show error instead of crashing
+    if not access_token:
+        return f"OAuth failed: {token}"
 
     user = requests.get(
         "https://discord.com/api/users/@me",
         headers={"Authorization": f"Bearer {access_token}"}
     ).json()
 
+    print("USER:", user)  # 🔥 DEBUG
+
     # redirect to dashboard
     return redirect(
-        f"https://ghostnet-bot.github.io/dashboard?username={user['username']}&avatar={user['id']}/{user['avatar']}"
+        f"https://ghostnet-bot.github.io/dashboard?username={user.get('username')}&avatar={user.get('id')}/{user.get('avatar')}"
     )
 
 # -------------------------
