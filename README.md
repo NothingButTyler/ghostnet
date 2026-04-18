@@ -56,6 +56,10 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 
 - [x] Add shields to readme.md
 
+# Announcements
+The dates are ordered in YYYY/MM/DD
+
+
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [discord-shield]: https://img.shields.io/discord/1453550759991050344?label=discord&logo=discord&color=5865F2&logoColor=white
