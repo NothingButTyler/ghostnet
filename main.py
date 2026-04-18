@@ -130,7 +130,12 @@ bot = GhostNet()
 # -------------------------
 # 💰 COMMANDS
 # -------------------------
-@bot.hybrid_command(name="daily")
+
+
+# -------------------------
+# 💰 DAILY
+# -------------------------
+@bot.hybrid_command(name="daily", description="Claim your daily reward")
 async def daily(ctx: commands.Context):
     await ctx.defer(thinking=True)
 
@@ -147,7 +152,8 @@ async def daily(ctx: commands.Context):
     res = cursor.fetchone()
 
     if res and res[0] == today:
-        return await ctx.send("Already claimed.")
+        conn.close()
+        return await ctx.send("🚫 Already claimed today.")
 
     streak = (res[1] if res else 0) + 1
     reward = 100000 + (1080 * streak)
@@ -162,7 +168,11 @@ async def daily(ctx: commands.Context):
 
     await ctx.send(f"💰 {reward:,} bits | streak {streak}")
 
-@bot.hybrid_command(name="balance")
+
+# -------------------------
+# 💳 BALANCE
+# -------------------------
+@bot.hybrid_command(name="balance", description="Check your balance")
 async def balance(ctx: commands.Context):
     await ctx.defer(thinking=True)
 
@@ -174,8 +184,97 @@ async def balance(ctx: commands.Context):
     conn.close()
 
     bal = res[0] if res else 0
-    await ctx.send(f"{bal:,} bits")
+    await ctx.send(f"🪙 {bal:,} bits")
 
+
+# -------------------------
+# 🎒 INVENTORY
+# -------------------------
+@bot.hybrid_command(name="inventory", description="View your inventory")
+async def inventory(ctx: commands.Context):
+    await ctx.defer(thinking=True)
+
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT item_name, quantity FROM inventory
+        WHERE user_id = ? AND quantity > 0
+    """, (ctx.author.id,))
+
+    items = cursor.fetchall()
+    conn.close()
+
+    if not items:
+        return await ctx.send("🎒 Inventory is empty.")
+
+    text = "\n".join([f"{name} x{qty}" for name, qty in items])
+    await ctx.send(f"🎒 Inventory:\n{text}")
+
+
+# -------------------------
+# 📦 USE ITEM
+# -------------------------
+@bot.hybrid_command(name="use", description="Use an item from your inventory")
+@app_commands.describe(item="Item name to use")
+async def use(ctx: commands.Context, item: str):
+    await ctx.defer(thinking=True)
+
+    user_id = ctx.author.id
+    item = item.title()
+
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT quantity FROM inventory
+        WHERE user_id = ? AND item_name = ?
+    """, (user_id, item))
+
+    res = cursor.fetchone()
+
+    if not res or res[0] <= 0:
+        conn.close()
+        return await ctx.send("❌ You don’t have that item.")
+
+    reward = 50000  # example reward
+
+    cursor.execute("""
+        UPDATE inventory SET quantity = quantity - 1
+        WHERE user_id = ? AND item_name = ?
+    """, (user_id, item))
+
+    cursor.execute("""
+        UPDATE users SET balance = balance + ?
+        WHERE user_id = ?
+    """, (reward, user_id))
+
+    conn.commit()
+    conn.close()
+
+    await ctx.send(f"📦 Used {item} → +{reward:,} bits")
+
+
+# -------------------------
+# ❓ HELP
+# -------------------------
+@bot.hybrid_command(name="help", description="View all commands")
+async def help_command(ctx: commands.Context):
+    await ctx.defer(thinking=True)
+
+    text = """
+💰 Currency:
+/daily - Claim reward
+/balance - Check balance
+
+🎒 Items:
+/inventory - View items
+/use - Use an item
+
+📖 Other:
+/help - Show this menu
+"""
+    await ctx.send(text)
 # -------------------------
 # 🚀 RUN BOTH
 # -------------------------
