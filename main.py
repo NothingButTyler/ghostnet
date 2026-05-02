@@ -20,6 +20,12 @@ CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REDIRECT_URI = "https://ghostnet-0p4u.onrender.com/login-callback"
 
 # -------------------------
+#  Variables
+# -------------------------
+ADMIN_IDS = [711601844740292649, 1210240420047749151]
+BIG_TRANSFER = 100_000_000
+
+# -------------------------
 # 🌐 FLASK APP
 # -------------------------
 app = Flask(__name__)
@@ -254,6 +260,57 @@ async def use(ctx: commands.Context, item: str):
 
     await ctx.send(f"📦 Used {item} → +{reward:,} bits")
 
+# -------------------------
+# ADMIN GIVE
+# -------------------------
+
+@bot.command(name="give")
+async def give(ctx, member: discord.Member, amount: int):
+    # admin check
+    if ctx.author.id not in ADMIN_IDS:
+        return
+
+    if amount <= 0 or member.id == ctx.author.id:
+        return
+
+    conn = sqlite3.connect("economy.db")
+    cursor = conn.cursor()
+
+    cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (ctx.author.id,))
+    cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (member.id,))
+
+    cursor.execute("SELECT balance FROM users WHERE user_id = ?", (ctx.author.id,))
+    sender_balance = cursor.fetchone()[0]
+
+    if sender_balance < amount:
+        conn.close()
+        return
+
+    # 💥 BIG TRANSFER CONFIRMATION
+    if amount >= BIG_TRANSFER:
+        confirm_msg = await ctx.send(
+            f"⚠️ Confirm transfer of {amount:,} bits to {member.mention}\nType `yes` to confirm."
+        )
+
+        def check(m):
+            return m.author == ctx.author and m.content.lower() == "yes"
+
+        try:
+            await bot.wait_for("message", timeout=15, check=check)
+        except:
+            await confirm_msg.edit(content="❌ Transfer cancelled.")
+            conn.close()
+            return
+
+    # 💰 transfer
+    cursor.execute("UPDATE users SET balance = balance - ? WHERE user_id = ?", (amount, ctx.author.id))
+    cursor.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, member.id))
+
+    conn.commit()
+    conn.close()
+
+    # 🔇 silent success (only reacts)
+    await ctx.message.add_reaction("✅")
 
 # -------------------------
 # ❓ HELP
