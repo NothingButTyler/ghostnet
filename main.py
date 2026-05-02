@@ -137,7 +137,6 @@ bot = GhostNet()
 # 💰 COMMANDS
 # -------------------------
 
-
 # -------------------------
 # 💰 DAILY
 # -------------------------
@@ -159,7 +158,7 @@ async def daily(ctx: commands.Context):
 
     if res and res[0] == today:
         conn.close()
-        return await ctx.send("🚫 Already claimed today.")
+        return await ctx.followup.send("🚫 Already claimed today.")
 
     streak = (res[1] if res else 0) + 1
     reward = 100000 + (1080 * streak)
@@ -172,7 +171,7 @@ async def daily(ctx: commands.Context):
     conn.commit()
     conn.close()
 
-    await ctx.send(f"💰 {reward:,} bits | streak {streak}")
+    await ctx.followup.send(f"💰 {reward:,} bits | streak {streak}")
 
 
 # -------------------------
@@ -187,10 +186,11 @@ async def balance(ctx: commands.Context):
 
     cursor.execute("SELECT balance FROM users WHERE user_id = ?", (ctx.author.id,))
     res = cursor.fetchone()
+
     conn.close()
 
     bal = res[0] if res else 0
-    await ctx.send(f"🪙 {bal:,} bits")
+    await ctx.followup.send(f"🪙 {bal:,} bits")
 
 
 # -------------------------
@@ -212,17 +212,17 @@ async def inventory(ctx: commands.Context):
     conn.close()
 
     if not items:
-        return await ctx.send("🎒 Inventory is empty.")
+        return await ctx.followup.send("🎒 Inventory is empty.")
 
     text = "\n".join([f"{name} x{qty}" for name, qty in items])
-    await ctx.send(f"🎒 Inventory:\n{text}")
+    await ctx.followup.send(f"🎒 Inventory:\n{text}")
 
 
 # -------------------------
 # 📦 USE ITEM
 # -------------------------
-@bot.hybrid_command(name="use", description="Use an item from your inventory")
-@app_commands.describe(item="Item name to use")
+@bot.hybrid_command(name="use", description="Use an item")
+@app_commands.describe(item="Item name")
 async def use(ctx: commands.Context, item: str):
     await ctx.defer(thinking=True)
 
@@ -241,9 +241,9 @@ async def use(ctx: commands.Context, item: str):
 
     if not res or res[0] <= 0:
         conn.close()
-        return await ctx.send("❌ You don’t have that item.")
+        return await ctx.followup.send("❌ You don’t have that item.")
 
-    reward = 50000  # example reward
+    reward = 50000
 
     cursor.execute("""
         UPDATE inventory SET quantity = quantity - 1
@@ -258,20 +258,19 @@ async def use(ctx: commands.Context, item: str):
     conn.commit()
     conn.close()
 
-    await ctx.send(f"📦 Used {item} → +{reward:,} bits")
+    await ctx.followup.send(f"📦 Used {item} → +{reward:,} bits")
+
 
 # -------------------------
-# ADMIN GIVE
+# 🔐 ADMIN GIVE (PREFIX ONLY)
 # -------------------------
-
 @bot.command(name="give")
 async def give(ctx, member: discord.Member, amount: int):
-    # admin check
     if ctx.author.id not in ADMIN_IDS:
-        return
+        return await ctx.send("❌ Not allowed.")
 
     if amount <= 0 or member.id == ctx.author.id:
-        return
+        return await ctx.send("❌ Invalid usage.")
 
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
@@ -284,12 +283,12 @@ async def give(ctx, member: discord.Member, amount: int):
 
     if sender_balance < amount:
         conn.close()
-        return
+        return await ctx.send("❌ Not enough balance.")
 
-    # 💥 BIG TRANSFER CONFIRMATION
+    # BIG TRANSFER CONFIRM
     if amount >= BIG_TRANSFER:
         confirm_msg = await ctx.send(
-            f"⚠️ Confirm transfer of {amount:,} bits to {member.mention}\nType `yes` to confirm."
+            f"⚠️ Confirm {amount:,} → {member.mention}\nType `yes`"
         )
 
         def check(m):
@@ -298,40 +297,50 @@ async def give(ctx, member: discord.Member, amount: int):
         try:
             await bot.wait_for("message", timeout=15, check=check)
         except:
-            await confirm_msg.edit(content="❌ Transfer cancelled.")
+            await confirm_msg.edit(content="❌ Cancelled.")
             conn.close()
             return
 
-    # 💰 transfer
+    # TRANSFER
     cursor.execute("UPDATE users SET balance = balance - ? WHERE user_id = ?", (amount, ctx.author.id))
     cursor.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, member.id))
 
     conn.commit()
     conn.close()
 
-    # 🔇 silent success (only reacts)
     await ctx.message.add_reaction("✅")
 
+
 # -------------------------
-# ❓ HELP
+# ❓ HELP (ADMIN HIDDEN)
 # -------------------------
-@bot.hybrid_command(name="help", description="View all commands")
+@bot.hybrid_command(name="help", description="View commands")
 async def help_command(ctx: commands.Context):
     await ctx.defer(thinking=True)
 
-    text = """
+    is_admin = ctx.author.id in ADMIN_IDS
+
+    base_text = """
 💰 Currency:
-/daily - Claim reward
-/balance - Check balance
+/daily
+/balance
 
 🎒 Items:
-/inventory - View items
-/use - Use an item
-
-📖 Other:
-/help - Show this menu
+/inventory
+/use
 """
-    await ctx.send(text)
+
+    admin_text = """
+
+🔐 Admin:
+net give @user amount
+"""
+
+    if not is_admin:
+        return await ctx.followup.send(base_text)
+
+    # admin sees extra, but ONLY they see it
+    await ctx.followup.send(base_text + admin_text, ephemeral=True)
 # -------------------------
 # 🚀 RUN BOTH
 # -------------------------
