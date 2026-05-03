@@ -269,23 +269,13 @@ async def give(ctx, member: discord.Member, amount: int):
     if ctx.author.id not in ADMIN_IDS:
         return await ctx.send("❌ Not allowed.")
 
-    if amount <= 0 or member.id == ctx.author.id:
-        return await ctx.send("❌ Invalid usage.")
-
     conn = sqlite3.connect("economy.db")
     cursor = conn.cursor()
 
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (ctx.author.id,))
     cursor.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (member.id,))
 
-    cursor.execute("SELECT balance FROM users WHERE user_id = ?", (ctx.author.id,))
-    sender_balance = cursor.fetchone()[0]
-
-    if sender_balance < amount:
-        conn.close()
-        return await ctx.send("❌ Not enough balance.")
-
-    # BIG TRANSFER CONFIRM
+    # 💥 BIG TRANSFER CONFIRM (still kept)
     if amount >= BIG_TRANSFER:
         confirm_msg = await ctx.send(
             f"⚠️ Confirm {amount:,} → {member.mention}\nType `yes`"
@@ -301,15 +291,20 @@ async def give(ctx, member: discord.Member, amount: int):
             conn.close()
             return
 
-    # TRANSFER
-    cursor.execute("UPDATE users SET balance = balance - ? WHERE user_id = ?", (amount, ctx.author.id))
-    cursor.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, member.id))
+    # 💰 TRANSFER (no limits now)
+    cursor.execute(
+        "UPDATE users SET balance = balance - ? WHERE user_id = ?",
+        (amount, ctx.author.id)
+    )
+    cursor.execute(
+        "UPDATE users SET balance = balance + ? WHERE user_id = ?",
+        (amount, member.id)
+    )
 
     conn.commit()
     conn.close()
 
     await ctx.message.add_reaction("✅")
-
 
 # -------------------------
 # ❓ HELP (ADMIN HIDDEN)
