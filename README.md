@@ -39,8 +39,8 @@ If you need any more help with anything, join [this server](https://discord.com/
 * [![Render][render-shield]][render-url]
 * [![UptimeRobot][uptimerobot-shield]][uptimerobot-url]
 ## Authors
-- NothingButTyler - *Owner* - [Github Profile](https://github.com/nothingbuttyler)
-- br3h - *Co-Owner* - [Github Profile](https://github.com/br3hyt)
+- NothingButTyler - *[Old Owner](https://ghostnet-bot.github.io/docs/what-happened-to-the-old-owner?RedirectedByGitHub=true&redirect_uri=https://github.com/GhostNet-Bot/ghostnet-api)* - [Github Profile](https://github.com/nothingbuttyler)
+- br3h - *New Owner as of May 2026* - [Github Profile](https://github.com/br3hyt)
 
 ## Top Contributors
 <a href="https://github.com/nothingbuttyler/ghostnet/graphs/contributors">
@@ -58,6 +58,8 @@ We are not supporting/encouraging self hosting this bot. The code is here becaus
 
 # Announcements
 The dates are ordered in YYYY/MM/DD
+
+- [NothingButTyler](https://github.com/NothingButTyler), the original owner of GhostNet, has unfortunately quit GhostNet. For more information, check out the latest docs page about it on [the official GhostNet website](https://ghostnet-bot.github.io/docs/what-happened-to-the-old-owner?RedirectedByGitHub=true&redirect_uri=https://github.com/GhostNet-Bot/ghostnet-api).
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
